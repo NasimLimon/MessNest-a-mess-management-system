@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Member Dashboard - MealNest</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">🍽️ MealNest - Member Dashboard</div>
+    <div class="user-info">
+      <span id="userInfo">Loading...</span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-button" onclick="switchTab('bills')">My Bills</button>
+      <button class="tab-button" onclick="switchTab('meals')">Meal History</button>
+      <button class="tab-button" onclick="switchTab('menu')">Menu</button>
+      <button class="tab-button" onclick="switchTab('notices')">Notices</button>
+      <button class="tab-button" onclick="switchTab('complaints')">Complaints</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="overview" class="tab-content active">
+      <div class="dashboard-grid">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <h3 id="thisMonthMeals">0</h3>
+          <p>Meals This Month</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <h3 id="thisMonthBill">₹0</h3>
+          <p>This Month's Bill</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <h3 id="amountPaid">₹0</h3>
+          <p>Amount Paid</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+          <h3 id="amountDue">₹0</h3>
+          <p>Amount Due</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Quick Links</div>
+        <button onclick="switchTab('bills')" style="margin-right: 0.5rem;">View Bills</button>
+        <button onclick="switchTab('meals')" style="margin-right: 0.5rem;">Meal History</button>
+        <button onclick="switchTab('complaints')" style="margin-right: 0.5rem;">Submit Complaint</button>
+        <button onclick="switchTab('notices')">View Notices</button>
+      </div>
+    </div>
+
+    <!-- Bills Tab -->
+    <div id="bills" class="tab-content">
+      <div class="card">
+        <div class="card-title">My Bills</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Meals</th>
+              <th>Amount</th>
+              <th>Paid</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="billsList"></tbody>
+        </table>
+      </div>
+
+      <div id="paymentForm" style="display: none;" class="card">
+        <div class="card-title">Record Payment</div>
+        <form onsubmit="handlePayment(event)">
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" id="paymentAmount" step="0.01" required>
+          </div>
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="paymentMethod">
+              <option value="cash">Cash</option>
+              <option value="transfer">Bank Transfer</option>
+              <option value="online">Online</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <button type="submit">Record Payment</button>
+          <button type="button" class="btn-secondary" onclick="document.getElementById('paymentForm').style.display='none'">Cancel</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Meals Tab -->
+    <div id="meals" class="tab-content">
+      <div class="card">
+        <div class="card-title">My Meal History</div>
+        <div style="margin-bottom: 1rem;">
+          <label>Filter by Month:</label>
+          <input type="month" id="mealMonthFilter" onchange="loadMealHistory()">
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Recorded At</th>
+            </tr>
+          </thead>
+          <tbody id="mealsList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Menu Tab -->
+    <div id="menu" class="tab-content">
+      <div class="card">
+        <div class="card-title">Weekly Menu</div>
+        <div id="menuList"></div>
+      </div>
+    </div>
+
+    <!-- Notices Tab -->
+    <div id="notices" class="tab-content">
+      <div class="card">
+        <div class="card-title">Notices & Announcements</div>
+        <div id="noticesList"></div>
+      </div>
+    </div>
+
+    <!-- Complaints Tab -->
+    <div id="complaints" class="tab-content">
+      <div class="card">
+        <div class="card-title">Submit Complaint</div>
+        <form onsubmit="handleSubmitComplaint(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Complaint Type</label>
+            <select id="complaintType" required>
+              <option value="food_quality">Food Quality</option>
+              <option value="hygiene">Hygiene</option>
+              <option value="service">Service</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="complaintTitle" required>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="complaintDescription" required></textarea>
+          </div>
+          <button type="submit">Submit Complaint</button>
+        </form>
+
+        <h4>My Complaints</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="complaintsList"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    let memberData = null;
+    let currentMonth = new Date().toISOString().substring(0, 7);
+
+    async function init() {
+      if (!await checkAuth()) return;
+      if (currentUser.role === 'admin') {
+        window.location.href = '/pages/admin-dashboard.html';
+        return;
+      }
+      document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username}!`;
+      document.getElementById('mealMonthFilter').value = currentMonth;
+      await loadMemberOverview();
+    }
+
+    async function loadMemberOverview() {
+      try {
+        const member = await api.getMember(currentUser.id);
+        memberData = member;
+
+        const billStatus = await api.getMemberBillStatus(member.id);
+        const currentBill = billStatus.find(b => b.month === currentMonth);
+
+        if (currentBill) {
+          document.getElementById('thisMonthMeals').textContent = '?';
+          document.getElementById('thisMonthBill').textContent = '₹' + currentBill.total_amount;
+          document.getElementById('amountPaid').textContent = '₹' + currentBill.paid_amount;
+          document.getElementById('amountDue').textContent = '₹' + currentBill.due_amount;
+        }
+
+        const summary = await api.getMonthlySummary(member.id, currentMonth);
+        document.getElementById('thisMonthMeals').textContent = summary.total_meals || 0;
+      } catch (err) {
+        console.error('Error:', err);
+      }
+    }
+
+    async function loadBills() {
+      try {
+        const member = await api.getMember(currentUser.id);
+        const billStatus = await api.getMemberBillStatus(member.id);
+
+        const tbody = document.getElementById('billsList');
+        tbody.innerHTML = '';
+
+        billStatus.forEach(bill => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${bill.month}</td>
+            <td>-</td>
+            <td>₹${bill.total_amount}</td>
+            <td>₹${bill.paid_amount}</td>
+            <td>₹${bill.due_amount}</td>
+            <td><span class="badge ${bill.status === 'paid' ? 'badge-success' : 'badge-danger'}">${bill.status}</span></td>
+            <td>
+              ${bill.due_amount > 0 ? `<button onclick="showPaymentForm(${bill.id}, ${bill.due_amount})">Pay</button>` : 'Paid'}
+            </td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading bills:', err);
+      }
+    }
+
+    function showPaymentForm(billId, dueAmount) {
+      document.getElementById('paymentAmount').value = dueAmount;
+      document.getElementById('paymentAmount').dataset.billId = billId;
+      document.getElementById('paymentForm').style.display = 'block';
+    }
+
+    async function handlePayment(e) {
+      e.preventDefault();
+      try {
+        const member = await api.getMember(currentUser.id);
+        const billId = parseInt(document.getElementById('paymentAmount').dataset.billId);
+        const amount = parseFloat(document.getElementById('paymentAmount').value);
+
+        await api.recordPayment(member.id, billId, amount, document.getElementById('paymentMethod').value);
+        alert('Payment recorded successfully');
+        document.getElementById('paymentForm').style.display = 'none';
+        await loadBills();
+        await loadMemberOverview();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadMealHistory() {
+      try {
+        const member = await api.getMember(currentUser.id);
+        const month = document.getElementById('mealMonthFilter').value;
+        const meals = await api.getMemberMeals(member.id, month);
+
+        const tbody = document.getElementById('mealsList');
+        tbody.innerHTML = '';
+
+        meals.forEach(meal => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${meal.meal_date}</td>
+            <td>${meal.meal_type}</td>
+            <td>${new Date(meal.recorded_at || Date.now()).toLocaleString()}</td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading meals:', err);
+      }
+    }
+
+    async function loadMenu() {
+      try {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        const menu = await api.getMenu(startDate, endDate);
+
+        const div = document.getElementById('menuList');
+        div.innerHTML = '';
+
+        const grouped = {};
+        menu.forEach(item => {
+          if (!grouped[item.menu_date]) grouped[item.menu_date] = {};
+          grouped[item.menu_date][item.meal_type] = item.items;
+        });
+
+        Object.keys(grouped).sort().forEach(date => {
+          const items = grouped[date];
+          div.innerHTML += `
+            <div class="card">
+              <h4>${new Date(date).toLocaleDateString()}</h4>
+              <p><strong>Breakfast:</strong> ${items.breakfast || '-'}</p>
+              <p><strong>Lunch:</strong> ${items.lunch || '-'}</p>
+              <p><strong>Dinner:</strong> ${items.dinner || '-'}</p>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading menu:', err);
+      }
+    }
+
+    async function loadNotices() {
+      try {
+        const notices = await api.getNotices();
+        const div = document.getElementById('noticesList');
+        div.innerHTML = '';
+
+        notices.forEach(notice => {
+          div.innerHTML += `
+            <div class="card">
+              <h4>${notice.title}</h4>
+              <p>${notice.content}</p>
+              <small>Posted by ${notice.posted_by} | Priority: <span class="badge badge-${notice.priority === 'high' ? 'danger' : 'info'}">${notice.priority}</span></small>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading notices:', err);
+      }
+    }
+
+    async function handleSubmitComplaint(e) {
+      e.preventDefault();
+      try {
+        await api.submitComplaint(
+          document.getElementById('complaintTitle').value,
+          document.getElementById('complaintDescription').value,
+          document.getElementById('complaintType').value
+        );
+        alert('Complaint submitted successfully');
+        e.target.reset();
+        await loadComplaintsHistory();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadComplaintsHistory() {
+      try {
+        const member = await api.getMember(currentUser.id);
+        const complaints = await api.getMemberComplaints(member.id);
+
+        const tbody = document.getElementById('complaintsList');
+        tbody.innerHTML = '';
+
+        complaints.forEach(complaint => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${complaint.title}</td>
+            <td>${complaint.complaint_type}</td>
+            <td><span class="badge badge-${complaint.status === 'resolved' ? 'success' : complaint.status === 'in_progress' ? 'warning' : 'danger'}">${complaint.status}</span></td>
+            <td>${new Date(complaint.created_at).toLocaleDateString()}</td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading complaints:', err);
+      }
+    }
+
+    function switchTab(tabName) {
+      const tabs = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Load data for specific tabs
+      if (tabName === 'bills') loadBills();
+      if (tabName === 'meals') loadMealHistory();
+      if (tabName === 'menu') loadMenu();
+      if (tabName === 'notices') loadNotices();
+      if (tabName === 'complaints') loadComplaintsHistory();
+    }
+
+    init();
+  </script>
+</body>
+</html>

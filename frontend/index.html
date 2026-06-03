@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MealNest - Smart Mess Management</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container" style="margin-top: 5rem;">
+    <div style="text-align: center;">
+      <h1 style="font-size: 3rem; margin-bottom: 1rem;">🍽️ MealNest</h1>
+      <h2 style="color: #666; margin-bottom: 2rem;">Smart Mess Management System</h2>
+      <p style="font-size: 1.1rem; margin-bottom: 2rem; color: #555;">
+        Digitize and automate your mess operations. Manage meals, billing, payments, notices, and complaints all in one place.
+      </p>
+
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button onclick="window.location.href='/pages/login.html'" style="padding: 1rem 2rem; font-size: 1.1rem;">
+          Login
+        </button>
+        <button onclick="window.location.href='/pages/register.html'" class="btn-secondary" style="padding: 1rem 2rem; font-size: 1.1rem;">
+          Register
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top: 3rem;">
+      <h3>Features</h3>
+      <div class="dashboard-grid">
+        <div class="card">
+          <h4>📊 Automatic Billing</h4>
+          <p>Automatic monthly bill calculation based on meal count, fixed costs, and extra charges.</p>
+        </div>
+        <div class="card">
+          <h4>🍴 Meal Tracking</h4>
+          <p>Real-time meal tracking with detailed history and monthly summaries.</p>
+        </div>
+        <div class="card">
+          <h4>💰 Payment Management</h4>
+          <p>Easy payment recording and tracking with paid/unpaid status.</p>
+        </div>
+        <div class="card">
+          <h4>📋 Menu Management</h4>
+          <p>Daily/weekly menu planning and member access to upcoming meals.</p>
+        </div>
+        <div class="card">
+          <h4>📢 Announcements</h4>
+          <p>Post important notices and announcements to all members.</p>
+        </div>
+        <div class="card">
+          <h4>⚠️ Complaint System</h4>
+          <p>Members can submit complaints and track resolution status.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (api.token) {
+      checkAuth().then(isAuth => {
+        if (isAuth) {
+          redirectToDashboard();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - MealNest</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <div class="logo">🍽️ MealNest - Admin Dashboard</div>
+    <div class="user-info">
+      <span id="userInfo">Loading...</span>
+      <button onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-button" onclick="switchTab('members')">Members</button>
+      <button class="tab-button" onclick="switchTab('meals')">Meals</button>
+      <button class="tab-button" onclick="switchTab('billing')">Billing</button>
+      <button class="tab-button" onclick="switchTab('menu')">Menu</button>
+      <button class="tab-button" onclick="switchTab('notices')">Notices</button>
+      <button class="tab-button" onclick="switchTab('complaints')">Complaints</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="overview" class="tab-content active">
+      <div class="dashboard-grid">
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <h3 id="totalMembers">0</h3>
+          <p>Total Members</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <h3 id="totalMeals">0</h3>
+          <p>Total Meals (This Month)</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <h3 id="totalCollected">₹0</h3>
+          <p>Total Collected</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+          <h3 id="totalDue">₹0</h3>
+          <p>Pending Dues</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Quick Actions</div>
+        <button onclick="switchTab('members')" style="margin-right: 0.5rem;">Manage Members</button>
+        <button onclick="switchTab('meals')" style="margin-right: 0.5rem;">Record Meals</button>
+        <button onclick="switchTab('billing')" style="margin-right: 0.5rem;">Generate Bills</button>
+        <button onclick="switchTab('complaints')">View Complaints</button>
+      </div>
+    </div>
+
+    <!-- Members Tab -->
+    <div id="members" class="tab-content">
+      <div class="card">
+        <div class="card-title">Members Management</div>
+        <button onclick="showAddMemberForm()" style="margin-bottom: 1rem;">Add New Member</button>
+
+        <div id="addMemberForm" style="display: none; background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <h4>Add New Member</h4>
+          <form onsubmit="handleAddMember(event)">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="newMemberName" required>
+            </div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="newMemberUsername" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="newMemberEmail" required>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="newMemberPassword" required>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="newMemberPhone">
+            </div>
+            <button type="submit">Add Member</button>
+            <button type="button" onclick="showAddMemberForm()" class="btn-secondary">Cancel</button>
+          </form>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Join Date</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Meals Tab -->
+    <div id="meals" class="tab-content">
+      <div class="card">
+        <div class="card-title">Record Meals</div>
+        <form onsubmit="handleRecordMeal(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Member</label>
+            <select id="mealMemberId" required></select>
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="mealDate" required>
+          </div>
+          <div class="form-group">
+            <label>Meal Type</label>
+            <select id="mealType" required>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+            </select>
+          </div>
+          <button type="submit">Record Meal</button>
+        </form>
+
+        <h4>Recent Meals</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Recorded</th>
+            </tr>
+          </thead>
+          <tbody id="mealsList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Billing Tab -->
+    <div id="billing" class="tab-content">
+      <div class="card">
+        <div class="card-title">Billing Management</div>
+        <div style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <label>Generate Bills for Month:</label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <input type="month" id="billMonth" required>
+            <button onclick="handleGenerateBills()">Generate Bills</button>
+          </div>
+        </div>
+
+        <h4>Bills</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Month</th>
+              <th>Meals</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="billsList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Menu Tab -->
+    <div id="menu" class="tab-content">
+      <div class="card">
+        <div class="card-title">Menu Management</div>
+        <form onsubmit="handleAddMenu(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="menuDate" required>
+          </div>
+          <div class="form-group">
+            <label>Meal Type</label>
+            <select id="menuType" required>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Items (comma-separated)</label>
+            <input type="text" id="menuItems" required placeholder="e.g., Rice, Dal, Vegetables">
+          </div>
+          <button type="submit">Add Menu</button>
+        </form>
+
+        <h4>Menu</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Items</th>
+            </tr>
+          </thead>
+          <tbody id="menuList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Notices Tab -->
+    <div id="notices" class="tab-content">
+      <div class="card">
+        <div class="card-title">Post Notice</div>
+        <form onsubmit="handlePostNotice(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="noticeTitle" required>
+          </div>
+          <div class="form-group">
+            <label>Content</label>
+            <textarea id="noticeContent" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Priority</label>
+            <select id="noticePriority">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <button type="submit">Post Notice</button>
+        </form>
+
+        <h4>Notices</h4>
+        <div id="noticesList"></div>
+      </div>
+    </div>
+
+    <!-- Complaints Tab -->
+    <div id="complaints" class="tab-content">
+      <div class="card">
+        <div class="card-title">Manage Complaints</div>
+        <div id="complaintsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    let allMembers = [];
+
+    async function init() {
+      if (!await checkAuth()) return;
+      document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username}!`;
+      await loadOverviewData();
+      await loadMembers();
+      setMealDate();
+    }
+
+    function setMealDate() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('mealDate').value = today;
+      document.getElementById('menuDate').value = today;
+    }
+
+    async function loadOverviewData() {
+      try {
+        const currentMonth = new Date().toISOString().substring(0, 7);
+        const stats = await api.getMessStats(currentMonth);
+        document.getElementById('totalMembers').textContent = stats.total_members;
+        document.getElementById('totalMeals').textContent = stats.total_meals;
+        document.getElementById('totalCollected').textContent = '₹' + stats.total_collected;
+        document.getElementById('totalDue').textContent = '₹' + stats.total_due;
+      } catch (err) {
+        console.error('Error loading stats:', err);
+      }
+    }
+
+    async function loadMembers() {
+      try {
+        allMembers = await api.getMembers();
+        const tbody = document.getElementById('membersList');
+        const select = document.getElementById('mealMemberId');
+
+        tbody.innerHTML = '';
+        select.innerHTML = '<option value="">Select a member...</option>';
+
+        allMembers.forEach(member => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${member.full_name}</td>
+            <td>${member.email}</td>
+            <td>${member.phone || '-'}</td>
+            <td>${new Date(member.join_date).toLocaleDateString()}</td>
+            <td><span class="badge badge-success">${member.status}</span></td>
+            <td><button class="btn-danger" onclick="removeMember(${member.id})">Remove</button></td>
+          `;
+
+          const option = document.createElement('option');
+          option.value = member.id;
+          option.text = member.full_name;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        alert('Error loading members: ' + err.message);
+      }
+    }
+
+    function showAddMemberForm() {
+      const form = document.getElementById('addMemberForm');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function handleAddMember(e) {
+      e.preventDefault();
+      try {
+        await api.addMember(
+          document.getElementById('newMemberUsername').value,
+          document.getElementById('newMemberEmail').value,
+          document.getElementById('newMemberPassword').value,
+          document.getElementById('newMemberName').value,
+          document.getElementById('newMemberPhone').value
+        );
+        alert('Member added successfully');
+        document.getElementById('addMemberForm').reset();
+        showAddMemberForm();
+        await loadMembers();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function removeMember(id) {
+      if (confirm('Are you sure?')) {
+        try {
+          await api.removeMember(id);
+          await loadMembers();
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+    }
+
+    async function handleRecordMeal(e) {
+      e.preventDefault();
+      try {
+        await api.recordMeal(
+          parseInt(document.getElementById('mealMemberId').value),
+          document.getElementById('mealDate').value,
+          document.getElementById('mealType').value
+        );
+        alert('Meal recorded successfully');
+        e.target.reset();
+        await loadMeals();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadMeals() {
+      try {
+        const meals = await api.getMealHistory();
+        const tbody = document.getElementById('mealsList');
+        tbody.innerHTML = '';
+        meals.slice(0, 10).forEach(meal => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${meal.full_name}</td>
+            <td>${meal.meal_date}</td>
+            <td>${meal.meal_type}</td>
+            <td>${new Date(meal.recorded_at).toLocaleString()}</td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading meals:', err);
+      }
+    }
+
+    async function handleGenerateBills() {
+      try {
+        const month = document.getElementById('billMonth').value;
+        if (!month) {
+          alert('Please select a month');
+          return;
+        }
+        const result = await api.generateBills(month);
+        alert(result.message);
+        await loadBills();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadBills() {
+      try {
+        const bills = await api.getBills();
+        const tbody = document.getElementById('billsList');
+        tbody.innerHTML = '';
+        bills.forEach(bill => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${bill.full_name}</td>
+            <td>${bill.month}</td>
+            <td>${bill.meal_count}</td>
+            <td>₹${bill.total_amount}</td>
+            <td><span class="badge badge-info">Generated</span></td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading bills:', err);
+      }
+    }
+
+    async function handleAddMenu(e) {
+      e.preventDefault();
+      try {
+        await api.addMenuItems(
+          document.getElementById('menuDate').value,
+          document.getElementById('menuType').value,
+          document.getElementById('menuItems').value
+        );
+        alert('Menu added successfully');
+        e.target.reset();
+        setMealDate();
+        await loadMenu();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadMenu() {
+      try {
+        const today = new Date();
+        const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
+        const menu = await api.getMenu(startDate, endDate);
+        const tbody = document.getElementById('menuList');
+        tbody.innerHTML = '';
+        menu.forEach(item => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${item.menu_date}</td>
+            <td>${item.meal_type}</td>
+            <td>${item.items}</td>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading menu:', err);
+      }
+    }
+
+    async function handlePostNotice(e) {
+      e.preventDefault();
+      try {
+        await api.postNotice(
+          document.getElementById('noticeTitle').value,
+          document.getElementById('noticeContent').value,
+          document.getElementById('noticePriority').value
+        );
+        alert('Notice posted successfully');
+        e.target.reset();
+        await loadNotices();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadNotices() {
+      try {
+        const notices = await api.getNotices();
+        const div = document.getElementById('noticesList');
+        div.innerHTML = '';
+        notices.forEach(notice => {
+          div.innerHTML += `
+            <div class="card">
+              <div style="display: flex; justify-content: space-between;">
+                <div>
+                  <h4>${notice.title}</h4>
+                  <p>${notice.content}</p>
+                  <small>Posted by ${notice.posted_by} | Priority: ${notice.priority}</small>
+                </div>
+                <button class="btn-danger" onclick="deleteNotice(${notice.id})">Delete</button>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading notices:', err);
+      }
+    }
+
+    async function deleteNotice(id) {
+      if (confirm('Delete this notice?')) {
+        try {
+          await api.deleteNotice(id);
+          await loadNotices();
+        } catch (err) {
+          alert('Error: ' + err.message);
+        }
+      }
+    }
+
+    async function loadComplaints() {
+      try {
+        const complaints = await api.getComplaints();
+        const div = document.getElementById('complaintsList');
+        div.innerHTML = '';
+        complaints.forEach(complaint => {
+          div.innerHTML += `
+            <div class="card">
+              <div>
+                <h4>${complaint.title}</h4>
+                <p>${complaint.description}</p>
+                <div>
+                  <strong>Status:</strong> <span class="badge badge-warning">${complaint.status}</span>
+                  <strong style="margin-left: 1rem;">Type:</strong> ${complaint.complaint_type}
+                  <strong style="margin-left: 1rem;">Member:</strong> ${complaint.member_name}
+                </div>
+                ${complaint.response ? `<p><strong>Response:</strong> ${complaint.response}</p>` : ''}
+                <button onclick="respondComplaint(${complaint.id})">Respond</button>
+              </div>
+            </div>
+          `;
+        });
+      } catch (err) {
+        console.error('Error loading complaints:', err);
+      }
+    }
+
+    function respondComplaint(id) {
+      const response = prompt('Enter your response:');
+      if (response) {
+        api.updateComplaintStatus(id, 'in_progress', response).then(() => {
+          loadComplaints();
+        }).catch(err => alert('Error: ' + err.message));
+      }
+    }
+
+    function switchTab(tabName) {
+      const tabs = document.querySelectorAll('.tab-content');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tabName).classList.add('active');
+
+      const buttons = document.querySelectorAll('.tab-button');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      // Load data for specific tabs
+      if (tabName === 'members') loadMembers();
+      if (tabName === 'meals') loadMeals();
+      if (tabName === 'billing') loadBills();
+      if (tabName === 'menu') loadMenu();
+      if (tabName === 'notices') loadNotices();
+      if (tabName === 'complaints') loadComplaints();
+    }
+
+    init();
+  </script>
+</body>
+</html>
