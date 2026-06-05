@@ -1,11 +1,12 @@
-const mysql = require('mysql2/promise');
+﻿const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-// Create connection pool
 let pool;
 
+// Create connection pool
 const createPool = async () => {
   if (!pool) {
-    pool = await mysql.createPool({
+    pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
       port: process.env.DB_PORT || 3306,
       user: process.env.DB_USER || 'root',
@@ -15,45 +16,51 @@ const createPool = async () => {
       connectionLimit: 10,
       queueLimit: 0
     });
+
+    // Test connection
+    try {
+      const connection = await pool.getConnection();
+      console.log('✓ Connected to MySQL database');
+      connection.release();
+    } catch (err) {
+      console.error('✗ Database connection failed:', err.message);
+    }
   }
   return pool;
 };
 
-// Get connection
-const getConnection = async () => {
-  const pool = await createPool();
-  return pool.getConnection();
+// Execute any query and return results
+const query = async (sql, params = []) => {
+  const pool_instance = await createPool();
+  const connection = await pool_instance.getConnection();
+  try {
+    const [results] = await connection.execute(sql, params);
+    return results;
+  } finally {
+    connection.release();
+  }
 };
 
-// Execute query - single row
+// Get single row
 const dbGet = async (sql, params = []) => {
-  const connection = await getConnection();
-  try {
-    const [rows] = await connection.execute(sql, params);
-    return rows[0] || null;
-  } finally {
-    connection.release();
-  }
+  const results = await query(sql, params);
+  return results[0] || null;
 };
 
-// Execute query - multiple rows
+// Get all rows
 const dbAll = async (sql, params = []) => {
-  const connection = await getConnection();
-  try {
-    const [rows] = await connection.execute(sql, params);
-    return rows || [];
-  } finally {
-    connection.release();
-  }
+  return await query(sql, params);
 };
 
-// Execute insert/update/delete
+// Insert/Update/Delete
 const dbRun = async (sql, params = []) => {
-  const connection = await getConnection();
+  const pool_instance = await createPool();
+  const connection = await pool_instance.getConnection();
   try {
     const [result] = await connection.execute(sql, params);
     return {
       id: result.insertId,
+      insertId: result.insertId,
       lastID: result.insertId,
       changes: result.affectedRows
     };
@@ -62,30 +69,10 @@ const dbRun = async (sql, params = []) => {
   }
 };
 
-// Initialize database (create if not exists)
-const initializeDatabase = async () => {
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || ''
-  });
-
-  try {
-    // Create database
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'mestnest'}`);
-    console.log(`Database '${process.env.DB_NAME || 'mestnest'}' ready`);
-    return connection;
-  } finally {
-    await connection.end();
-  }
-};
-
 module.exports = {
   createPool,
-  getConnection,
+  query,
   dbGet,
   dbAll,
-  dbRun,
-  initializeDatabase
+  dbRun
 };
