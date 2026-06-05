@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -33,5 +33,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`MealNest server running on http://localhost:${PORT}`);
+  console.log(`MessNest server running on http://localhost:${PORT}`);
 });

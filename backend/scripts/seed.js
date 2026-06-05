@@ -1,102 +1,91 @@
 const bcryptjs = require('bcryptjs');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-// Database path
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database/mestnest.db');
-
-// Helper functions for promises
-const dbRun = (db, sql, params) => {
-  return new Promise((resolve, reject) => {
-    db.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve(this);
-    });
-  });
-};
-
-const dbGet = (db, sql, params) => {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
-    });
-  });
-};
-
-// Seed database with default data
 const seedDatabase = async () => {
-  const db = new sqlite3.Database(dbPath);
-
+  let connection;
   try {
-    console.log('Starting database seeding...');
+    console.log('Connecting to database...');
 
-    // Hash default password
-    const defaultPassword = bcryptjs.hashSync('admin123', 10);
+    // Create connection to MySQL
+    connection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'mestnest'
+    });
+
+    console.log('? Connected to database');
+    console.log('Starting database seeding...\n');
+
+    // Hash default passwords
+    const adminPassword = bcryptjs.hashSync('admin123', 10);
+    const memberPassword = bcryptjs.hashSync('member123', 10);
 
     // Create admin user if doesn't exist
-    const adminExists = await dbGet(db, 'SELECT id FROM users WHERE username = ?', ['admin']);
+    const [adminRows] = await connection.execute(
+      'SELECT id FROM users WHERE username = ?',
+      ['admin']
+    );
 
-    if (!adminExists) {
-      await dbRun(
-        db,
-        `INSERT INTO users (username, email, password, role)
-         VALUES (?, ?, ?, ?)`,
-        ['admin', 'admin@mestnest.local', defaultPassword, 'admin']
+    if (adminRows.length === 0) {
+      const [result] = await connection.execute(
+        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+        ['admin', 'admin@mestnest.local', adminPassword, 'admin']
       );
-      console.log('✓ Admin user created (username: admin, password: admin123)');
-    }
+      console.log('? Admin user created (username: admin, password: admin123)');
+      const adminId = result.insertId;
 
-    // Create default settings if doesn't exist
-    const settingsExists = await dbGet(db, 'SELECT id FROM settings');
-
-    if (!settingsExists) {
-      // Get admin user ID
-      const admin = await dbGet(db, 'SELECT id FROM users WHERE username = ?', ['admin']);
-
-      await dbRun(
-        db,
-        `INSERT INTO settings (mess_name, admin_id, meal_rate, monthly_fixed_cost)
-         VALUES (?, ?, ?, ?)`,
-        ['MessNest Mess', admin.id, 100.0, 500.0]
-      );
-      console.log('✓ Default settings created');
+      // Create default settings
+      const [settingsRows] = await connection.execute('SELECT id FROM settings');
+      if (settingsRows.length === 0) {
+        await connection.execute(
+          'INSERT INTO settings (mess_name, admin_id, meal_rate, monthly_fixed_cost) VALUES (?, ?, ?, ?)',
+          ['MessNest Mess', adminId, 100.0, 500.0]
+        );
+        console.log('? Default settings created');
+      }
+    } else {
+      console.log('? Admin user already exists');
     }
 
     // Create sample member if doesn't exist
-    const memberExists = await dbGet(db, 'SELECT id FROM members');
+    const [memberRows] = await connection.execute(
+      'SELECT id FROM users WHERE username = ?',
+      ['member1']
+    );
 
-    if (!memberExists) {
-      // Create a sample member user first
-      const memberPassword = bcryptjs.hashSync('member123', 10);
-      const member = await dbRun(
-        db,
-        `INSERT INTO users (username, email, password, role)
-         VALUES (?, ?, ?, ?)`,
+    if (memberRows.length === 0) {
+      // Create member user
+      const [memberResult] = await connection.execute(
+        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
         ['member1', 'member1@mestnest.local', memberPassword, 'member']
       );
+      const memberId = memberResult.insertId;
 
-      // Then create member profile
-      await dbRun(
-        db,
-        `INSERT INTO members (user_id, full_name, phone, status)
-         VALUES (?, ?, ?, ?)`,
-        [member.lastID, 'John Doe', '9876543210', 'active']
+      // Create member profile
+      await connection.execute(
+        'INSERT INTO members (user_id, full_name, phone, status) VALUES (?, ?, ?, ?)',
+        [memberId, 'John Doe', '9876543210', 'active']
       );
-      console.log('✓ Sample member created (username: member1, password: member123)');
+      console.log('? Sample member created (username: member1, password: member123)');
+    } else {
+      console.log('? Sample member user already exists');
     }
 
-    console.log('\n✅ Database seeding completed successfully!');
+    console.log('\n? Database seeding completed successfully!');
     console.log('');
     console.log('Default credentials:');
     console.log('  Admin  - username: admin, password: admin123');
     console.log('  Member - username: member1, password: member123');
     console.log('');
+
+    await connection.end();
   } catch (error) {
-    console.error('Error seeding database:', error.message);
+    console.error('? Error seeding database:', error.message);
+    if (connection) await connection.end();
     process.exit(1);
-  } finally {
-    db.close();
   }
 };
 

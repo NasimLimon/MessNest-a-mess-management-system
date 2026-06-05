@@ -9,9 +9,10 @@ exports.addMenuItem = async (req, res) => {
     }
 
     const result = await dbRun(
-      `INSERT OR REPLACE INTO menu (menu_date, meal_type, items, created_by)
-       VALUES (?, ?, ?, ?)`,
-      [menuDate, mealType, items, req.user.id]
+      `INSERT INTO menu (menu_date, meal_type, items, created_by)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE items = ?, created_by = ?`,
+      [menuDate, mealType, items, req.user.id, items, req.user.id]
     );
 
     res.json({ message: 'Menu item added successfully', id: result.id });

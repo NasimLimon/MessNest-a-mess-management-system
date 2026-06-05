@@ -97,7 +97,7 @@ exports.updateComplaintStatus = async (req, res) => {
     }
 
     if (status === 'resolved' || status === 'closed') {
-      updates.push('resolved_at = CURRENT_TIMESTAMP');
+      updates.push('resolved_at = NOW()');
       updates.push('resolved_by = ?');
       values.push(req.user.id);
     }

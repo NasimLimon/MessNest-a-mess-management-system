@@ -26,7 +26,7 @@ exports.getNotices = async (req, res) => {
       `SELECT n.*, u.username as posted_by
        FROM notices n
        JOIN users u ON n.created_by = u.id
-       WHERE expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP
+       WHERE expires_at IS NULL OR expires_at > NOW()
        ORDER BY n.created_at DESC`
     );
 

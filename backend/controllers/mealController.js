@@ -9,9 +9,10 @@ exports.recordMeal = async (req, res) => {
     }
 
     const result = await dbRun(
-      `INSERT OR REPLACE INTO meals (member_id, meal_date, meal_type, quantity)
-       VALUES (?, ?, ?, ?)`,
-      [memberId, mealDate, mealType, quantity]
+      `INSERT INTO meals (member_id, meal_date, meal_type, quantity)
+       VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE quantity = ?`,
+      [memberId, mealDate, mealType, quantity, quantity]
     );
 
     res.json({ message: 'Meal recorded successfully', id: result.id });
@@ -37,7 +38,7 @@ exports.getMealHistory = async (req, res) => {
     }
 
     if (month) {
-      query += ` AND strftime('%Y-%m', m.meal_date) = ?`;
+      query += ` AND DATE_FORMAT(m.meal_date, '%Y-%m') = ?`;
       params.push(month);
     }
 
@@ -64,7 +65,7 @@ exports.getMonthlySummary = async (req, res) => {
               SUM(CASE WHEN meal_type = 'lunch' THEN 1 ELSE 0 END) as lunch_count,
               SUM(CASE WHEN meal_type = 'dinner' THEN 1 ELSE 0 END) as dinner_count
        FROM meals
-       WHERE member_id = ? AND strftime('%Y-%m', meal_date) = ?`,
+       WHERE member_id = ? AND DATE_FORMAT(meal_date, '%Y-%m') = ?`,
       [memberId, month]
     );
 
@@ -85,7 +86,7 @@ exports.getMemberMeals = async (req, res) => {
     const params = [memberId];
 
     if (month) {
-      query += ` AND strftime('%Y-%m', meal_date) = ?`;
+      query += ` AND DATE_FORMAT(meal_date, '%Y-%m') = ?`;
       params.push(month);
     }
 

@@ -19,7 +19,7 @@ exports.generateMonthlyBills = async (req, res) => {
     for (const member of members) {
       const mealCount = await dbGet(
         `SELECT COUNT(*) as count FROM meals
-         WHERE member_id = ? AND strftime('%Y-%m', meal_date) = ?`,
+         WHERE member_id = ? AND DATE_FORMAT(meal_date, '%Y-%m') = ?`,
         [member.id, month]
       );
 
@@ -154,7 +154,7 @@ exports.getMessStatistics = async (req, res) => {
     const totalMeals = await dbGet(
       month
         ? `SELECT COUNT(*) as count FROM meals
-           WHERE strftime('%Y-%m', meal_date) = ?`
+           WHERE DATE_FORMAT(meal_date, '%Y-%m') = ?`
         : 'SELECT COUNT(*) as count FROM meals',
       month ? [month] : []
     );
@@ -162,7 +162,7 @@ exports.getMessStatistics = async (req, res) => {
     const totalCollected = await dbGet(
       month
         ? `SELECT SUM(amount) as total FROM payments
-           WHERE status = 'completed' AND strftime('%Y-%m', payment_date) = ?`
+           WHERE status = 'completed' AND DATE_FORMAT(payment_date, '%Y-%m') = ?`
         : 'SELECT SUM(amount) as total FROM payments WHERE status = "completed"',
       month ? [month] : []
     );

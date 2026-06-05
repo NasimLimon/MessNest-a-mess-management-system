@@ -1,49 +1,59 @@
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2/promise');
+require('dotenv').config();
 
-// Database path
-const dbPath = process.env.DB_PATH || path.join(__dirname, '../../database/mestnest.db');
+const initializeDatabase = async () => {
+  try {
+    console.log('Initializing database...');
 
-// Create/initialize database with schema
-const initializeDatabase = () => {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(dbPath, (err) => {
-      if (err) {
-        console.error('Error opening database:', err);
-        reject(err);
-        return;
+    // Create connection to MySQL server (without database)
+    const connection = await mysql.createConnection({
+      host: process.env.DB_HOST || 'localhost',
+      port: process.env.DB_PORT || 3306,
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || ''
+    });
+
+    console.log('? Connected to MySQL server');
+
+    // Create database
+    const dbName = process.env.DB_NAME || 'mestnest';
+    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
+    console.log(`? Database '${dbName}' created or already exists`);
+
+    // Select database
+    await connection.changeUser({ database: dbName });
+    console.log(`? Selected database '${dbName}'`);
+
+    // Read schema file
+    const schemaPath = path.join(__dirname, '../../database/schema.sql');
+    const schema = fs.readFileSync(schemaPath, 'utf8');
+
+    // Split schema by semicolon and execute each statement
+    const statements = schema
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
+    for (const statement of statements) {
+      try {
+        await connection.execute(statement);
+      } catch (err) {
+        console.error('Error executing statement:', statement);
+        throw err;
       }
+    }
 
-      console.log('Connected to database');
+    console.log('? Database schema initialized successfully');
 
-      // Read schema file
-      const schemaPath = path.join(__dirname, '../../database/schema.sql');
-      const schema = fs.readFileSync(schemaPath, 'utf8');
-
-      // Execute schema
-      db.exec(schema, (err) => {
-        if (err) {
-          console.error('Error executing schema:', err);
-          reject(err);
-          return;
-        }
-
-        console.log('Database schema initialized successfully');
-        resolve(db);
-      });
-    });
-  });
+    await connection.end();
+    console.log('\n? Database initialization completed!');
+  } catch (error) {
+    console.error('? Error initializing database:', error.message);
+    process.exit(1);
+  }
 };
 
-// Close database connection
-const closeDatabase = (db) => {
-  return new Promise((resolve, reject) => {
-    db.close((err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
-};
-
-module.exports = { initializeDatabase, closeDatabase };
+// Run initialization
+initializeDatabase();

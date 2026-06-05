@@ -119,7 +119,7 @@ exports.getPaymentSummary = async (req, res) => {
     const params = [];
 
     if (month) {
-      query += ` AND strftime('%Y-%m', payment_date) = ?`;
+      query += ` AND DATE_FORMAT(payment_date, '%Y-%m') = ?`;
       params.push(month);
     }
 
