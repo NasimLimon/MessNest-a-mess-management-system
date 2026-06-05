@@ -13,14 +13,23 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}) {
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers: this.getHeaders()
-    });
+    try {
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: this.getHeaders()
+      });
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'API Error');
-    return data;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || data.message || `HTTP ${response.status}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
   }
 
   // Auth
@@ -92,7 +101,12 @@ class ApiClient {
   }
 
   async getMealHistory(memberId, month) {
-    return this.request(`/meals${memberId ? '?memberId=' + memberId : ''}${month ? '&month=' + month : ''}`);
+    let url = '/meals';
+    const params = [];
+    if (memberId) params.push(`memberId=${memberId}`);
+    if (month) params.push(`month=${month}`);
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async getMonthlySummary(memberId, month) {
@@ -100,7 +114,9 @@ class ApiClient {
   }
 
   async getMemberMeals(memberId, month) {
-    return this.request(`/meals/member/${memberId}${month ? '?month=' + month : ''}`);
+    let url = `/meals/member/${memberId}`;
+    if (month) url += `?month=${month}`;
+    return this.request(url);
   }
 
   // Billing
@@ -112,7 +128,12 @@ class ApiClient {
   }
 
   async getBills(memberId, month) {
-    return this.request(`/billing${memberId ? '?memberId=' + memberId : ''}${month ? '&month=' + month : ''}`);
+    let url = '/billing';
+    const params = [];
+    if (memberId) params.push(`memberId=${memberId}`);
+    if (month) params.push(`month=${month}`);
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async getBillDetails(billId) {
@@ -120,7 +141,9 @@ class ApiClient {
   }
 
   async getMessStats(month) {
-    return this.request(`/billing/stats/mess${month ? '?month=' + month : ''}`);
+    let url = '/billing/stats/mess';
+    if (month) url += `?month=${month}`;
+    return this.request(url);
   }
 
   // Payments
@@ -133,10 +156,11 @@ class ApiClient {
 
   async getPayments(memberId, billId, month) {
     let url = '/payments?';
-    if (memberId) url += `memberId=${memberId}&`;
-    if (billId) url += `billId=${billId}&`;
-    if (month) url += `month=${month}`;
-    return this.request(url);
+    const params = [];
+    if (memberId) params.push(`memberId=${memberId}`);
+    if (billId) params.push(`billId=${billId}`);
+    if (month) params.push(`month=${month}`);
+    return this.request(url + params.join('&'));
   }
 
   async getPaymentHistory(memberId) {
@@ -157,10 +181,11 @@ class ApiClient {
 
   async getMenu(startDate, endDate, mealType) {
     let url = '/menu?';
-    if (startDate) url += `startDate=${startDate}&`;
-    if (endDate) url += `endDate=${endDate}&`;
-    if (mealType) url += `mealType=${mealType}`;
-    return this.request(url);
+    const params = [];
+    if (startDate) params.push(`startDate=${startDate}`);
+    if (endDate) params.push(`endDate=${endDate}`);
+    if (mealType) params.push(`mealType=${mealType}`);
+    return this.request(url + params.join('&'));
   }
 
   async getTodayMenu() {
@@ -193,9 +218,10 @@ class ApiClient {
 
   async getComplaints(status, complaintType) {
     let url = '/complaints?';
-    if (status) url += `status=${status}&`;
-    if (complaintType) url += `complaintType=${complaintType}`;
-    return this.request(url);
+    const params = [];
+    if (status) params.push(`status=${status}`);
+    if (complaintType) params.push(`complaintType=${complaintType}`);
+    return this.request(url + params.join('&'));
   }
 
   async updateComplaintStatus(id, status, response) {
@@ -211,3 +237,4 @@ class ApiClient {
 }
 
 const api = new ApiClient();
+

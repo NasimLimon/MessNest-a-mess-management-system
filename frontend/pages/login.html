@@ -10,27 +10,117 @@
   <div class="auth-container">
     <div class="auth-form">
       <h1>🍽️ MealNest</h1>
-      <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: #666;">Login</h2>
+      <h2>Welcome Back!</h2>
+
+      <div id="errorAlert" class="alert alert-error" style="display: none;"></div>
+      <div id="successAlert" class="alert alert-success" style="display: none;"></div>
 
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
           <label for="username">Username</label>
-          <input type="text" id="username" required placeholder="Enter your username">
+          <input 
+            type="text" 
+            id="username" 
+            required 
+            placeholder="Enter your username"
+            autocomplete="username"
+          >
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="Enter your password">
+          <input 
+            type="password" 
+            id="password" 
+            required 
+            placeholder="Enter your password"
+            autocomplete="current-password"
+          >
         </div>
 
-        <button type="submit">Login</button>
+        <div class="auth-form remember-me">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe">Remember me</label>
+        </div>
+
+        <button type="submit" id="loginBtn">
+          <span id="loginText">Login</span>
+          <span id="loginLoading" style="display: none;" class="loading"></span>
+        </button>
       </form>
 
       <p>Don't have an account? <a href="/pages/register.html">Register here</a></p>
     </div>
   </div>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script src="/js/api.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Redirect if already logged in
+    (async function() {
+      if (api.token) {
+        try {
+          await checkAuth();
+          if (currentUser) {
+            redirectToDashboard();
+          }
+        } catch (err) {
+          // Not authenticated, stay on login
+        }
+      }
+    })();
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const rememberMe = document.getElementById('rememberMe').checked;
+
+      const loginBtn = document.getElementById('loginBtn');
+      const loginText = document.getElementById('loginText');
+      const loginLoading = document.getElementById('loginLoading');
+
+      try {
+        loginBtn.disabled = true;
+        loginText.style.display = 'none';
+        loginLoading.style.display = 'inline-block';
+
+        const result = await api.login(username, password);
+        currentUser = result.user;
+
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+          localStorage.setItem('savedUsername', username);
+        } else {
+          localStorage.removeItem('rememberMe');
+          localStorage.removeItem('savedUsername');
+        }
+
+        showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => redirectToDashboard(), 1000);
+      } catch (err) {
+        showAlert('errorAlert', 'Login failed: ' + err.message, 'error');
+        showToast('Login failed: ' + err.message, 'error');
+      } finally {
+        loginBtn.disabled = false;
+        loginText.style.display = 'inline';
+        loginLoading.style.display = 'none';
+      }
+    }
+
+    // Load saved username if remember me was checked
+    window.addEventListener('load', () => {
+      if (localStorage.getItem('rememberMe') === 'true') {
+        const savedUsername = localStorage.getItem('savedUsername');
+        if (savedUsername) {
+          document.getElementById('username').value = savedUsername;
+          document.getElementById('rememberMe').checked = true;
+        }
+      }
+    });
+  </script>
 </body>
 </html>

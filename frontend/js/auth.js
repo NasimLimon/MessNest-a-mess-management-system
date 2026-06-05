@@ -9,6 +9,7 @@ async function checkAuth() {
     currentUser = await api.getCurrentUser();
     return true;
   } catch (err) {
+    console.error('Auth check failed:', err);
     redirectToLogin();
     return false;
   }
@@ -36,7 +37,8 @@ async function handleLogin(e) {
     currentUser = result.user;
     redirectToDashboard();
   } catch (err) {
-    alert('Login failed: ' + err.message);
+    showAlert('errorAlert', 'Login failed: ' + err.message, 'error');
+    showToast('Login failed: ' + err.message, 'error');
   }
 }
 
@@ -52,11 +54,26 @@ async function handleRegister(e) {
     currentUser = result.user;
     redirectToDashboard();
   } catch (err) {
-    alert('Registration failed: ' + err.message);
+    showAlert('errorAlert', 'Registration failed: ' + err.message, 'error');
+    showToast('Registration failed: ' + err.message, 'error');
   }
 }
 
 function logout() {
   api.logout();
+  showToast('Logged out successfully!', 'success');
   redirectToLogin();
 }
+
+function isAdmin() {
+  return currentUser?.role === 'admin';
+}
+
+function isMember() {
+  return currentUser?.role === 'member';
+}
+
+function getCurrentUserId() {
+  return currentUser?.id;
+}
+

@@ -10,37 +10,142 @@
   <div class="auth-container">
     <div class="auth-form">
       <h1>🍽️ MealNest</h1>
-      <h2 style="text-align: center; font-size: 1.2rem; margin-bottom: 2rem; color: #666;">Register</h2>
+      <h2>Join Our Mess!</h2>
+
+      <div id="errorAlert" class="alert alert-error" style="display: none;"></div>
+      <div id="successAlert" class="alert alert-success" style="display: none;"></div>
 
       <form onsubmit="handleRegister(event)">
         <div class="form-group">
           <label for="fullName">Full Name</label>
-          <input type="text" id="fullName" required placeholder="Enter your full name">
+          <input 
+            type="text" 
+            id="fullName" 
+            required 
+            placeholder="Enter your full name"
+            autocomplete="name"
+          >
         </div>
 
         <div class="form-group">
           <label for="username">Username</label>
-          <input type="text" id="username" required placeholder="Choose a username">
+          <input 
+            type="text" 
+            id="username" 
+            required 
+            placeholder="Choose a username"
+            autocomplete="username"
+          >
         </div>
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" required placeholder="Enter your email">
+          <input 
+            type="email" 
+            id="email" 
+            required 
+            placeholder="Enter your email"
+            autocomplete="email"
+          >
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" required placeholder="Enter a password">
+          <input 
+            type="password" 
+            id="password" 
+            required 
+            placeholder="Enter a password (min 6 characters)"
+            autocomplete="new-password"
+            minlength="6"
+          >
         </div>
 
-        <button type="submit">Register</button>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input 
+            type="password" 
+            id="confirmPassword" 
+            required 
+            placeholder="Confirm your password"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <button type="submit" id="registerBtn">
+          <span id="registerText">Register</span>
+          <span id="registerLoading" style="display: none;" class="loading"></span>
+        </button>
       </form>
 
       <p>Already have an account? <a href="/pages/login.html">Login here</a></p>
     </div>
   </div>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <script src="/js/api.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
+  <script>
+    // Redirect if already logged in
+    (async function() {
+      if (api.token) {
+        try {
+          await checkAuth();
+          if (currentUser) {
+            redirectToDashboard();
+          }
+        } catch (err) {
+          // Not authenticated, stay on register
+        }
+      }
+    })();
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const fullName = document.getElementById('fullName').value;
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Validation
+      if (password !== confirmPassword) {
+        showAlert('errorAlert', 'Passwords do not match!', 'error');
+        showToast('Passwords do not match!', 'error');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert('errorAlert', 'Password must be at least 6 characters!', 'error');
+        showToast('Password must be at least 6 characters!', 'error');
+        return;
+      }
+
+      const registerBtn = document.getElementById('registerBtn');
+      const registerText = document.getElementById('registerText');
+      const registerLoading = document.getElementById('registerLoading');
+
+      try {
+        registerBtn.disabled = true;
+        registerText.style.display = 'none';
+        registerLoading.style.display = 'inline-block';
+
+        const result = await api.register(username, email, password, fullName);
+        currentUser = result.user;
+
+        showToast('Registration successful! Redirecting...', 'success');
+        setTimeout(() => redirectToDashboard(), 1000);
+      } catch (err) {
+        showAlert('errorAlert', 'Registration failed: ' + err.message, 'error');
+        showToast('Registration failed: ' + err.message, 'error');
+      } finally {
+        registerBtn.disabled = false;
+        registerText.style.display = 'inline';
+        registerLoading.style.display = 'none';
+      }
+    }
+  </script>
 </body>
 </html>
