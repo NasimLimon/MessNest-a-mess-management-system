@@ -17,10 +17,12 @@ const initializeDatabase = async () => {
 
     console.log('? Connected to MySQL server');
 
-    // Create database
+    // Create or reset database
     const dbName = process.env.DB_NAME || 'mestnest';
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
-    console.log(`? Database '${dbName}' created or already exists`);
+    await connection.execute(`DROP DATABASE IF EXISTS ${dbName}`);
+    console.log(`? Existing database '${dbName}' dropped (if it existed)`);
+    await connection.execute(`CREATE DATABASE ${dbName}`);
+    console.log(`? Database '${dbName}' created`);
 
     // Select database
     await connection.changeUser({ database: dbName });

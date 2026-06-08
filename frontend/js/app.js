@@ -1,4 +1,3 @@
-const api = new ApiClient();
 let currentUser = null;
 let currentMember = null;
 let currentTab = 'dashboard';
