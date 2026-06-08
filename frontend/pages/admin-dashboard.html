@@ -23,6 +23,7 @@
       <button class="tab-button" onclick="switchTab('members')">Members</button>
       <button class="tab-button" onclick="switchTab('meals')">Meals</button>
       <button class="tab-button" onclick="switchTab('billing')">Billing</button>
+      <button class="tab-button" onclick="switchTab('expenses')">Expenses</button>
       <button class="tab-button" onclick="switchTab('menu')">Menu</button>
       <button class="tab-button" onclick="switchTab('notices')">Notices</button>
       <button class="tab-button" onclick="switchTab('complaints')">Complaints</button>
@@ -50,6 +51,14 @@
         <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
           <h3 id="totalCollected">₹0</h3>
           <p>Total Collected</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);">
+          <h3 id="totalExpenses">₹0</h3>
+          <p>Total Expenses</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #34d399 0%, #10b981 100%);">
+          <h3 id="mealRate">₹0.00</h3>
+          <p>Meal Rate</p>
         </div>
         <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
           <h3 id="pendingComplaints">0</h3>
@@ -263,6 +272,68 @@
       </div>
     </div>
 
+    <!-- Expenses Tab -->
+    <div id="expenses" class="tab-content">
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Expense Management</h4>
+          <div class="section-actions">
+            <button onclick="loadExpenses()">Refresh Expenses</button>
+            <button onclick="loadExpenseSummary()">Refresh Summary</button>
+          </div>
+        </div>
+
+        <form onsubmit="handleAddExpense(event)" style="background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="expenseDate" required>
+            </div>
+            <div class="form-group">
+              <label>Category</label>
+              <select id="expenseCategory" required>
+                <option value="groceries">Groceries</option>
+                <option value="market">Market</option>
+                <option value="utilities">Utilities</option>
+                <option value="rent">Rent</option>
+                <option value="salary">Salary</option>
+                <option value="maintenance">Maintenance</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Amount</label>
+              <input type="number" id="expenseAmount" step="0.01" min="0" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="expenseDescription" placeholder="Short description"></textarea>
+          </div>
+          <button type="submit">Add Expense</button>
+        </form>
+
+        <div class="section-header" style="margin-top: 2rem;">
+          <h4>Expense Records</h4>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Description</th>
+                <th>Entered By</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="expensesList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- Menu Tab -->
     <div id="menu" class="tab-content">
       <div class="section-panel">
@@ -365,6 +436,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
   <script>
     let allMembers = [];
 
@@ -376,15 +448,18 @@
         return;
       }
       document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username}!`;
+      setMealDate();
       await loadOverviewData();
       await loadMembers();
-      setMealDate();
+      await loadExpenses();
+      await loadExpenseSummary();
     }
 
     function setMealDate() {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('mealDate').value = today;
       document.getElementById('menuDate').value = today;
+      document.getElementById('billMonth').value = today.substring(0, 7);
     }
 
     async function loadOverviewData() {
@@ -415,6 +490,8 @@
         document.getElementById('inactiveMembers').textContent = inactiveCount;
         document.getElementById('totalMeals').textContent = stats.total_meals || 0;
         document.getElementById('totalCollected').textContent = '₹' + totalCollected;
+        document.getElementById('totalExpenses').textContent = '₹' + (stats.total_expenses || 0);
+        document.getElementById('mealRate').textContent = '₹' + ((stats.meal_rate !== undefined ? stats.meal_rate : 0).toFixed(2));
         document.getElementById('pendingComplaints').textContent = pendingCount;
 
         document.getElementById('billingCoverageLabel').textContent = `${billingCoverageValue}%`;
@@ -458,6 +535,70 @@
         });
       } catch (err) {
         alert('Error loading members: ' + err.message);
+      }
+    }
+
+    async function loadExpenses() {
+      try {
+        const currentMonth = document.getElementById('billMonth').value || new Date().toISOString().substring(0, 7);
+        const result = await api.getExpenses(currentMonth);
+        const expenses = result.data || [];
+        const tbody = document.getElementById('expensesList');
+        tbody.innerHTML = '';
+
+        expenses.forEach(expense => {
+          const row = tbody.insertRow();
+          row.innerHTML = `
+            <td>${new Date(expense.expense_date).toLocaleDateString()}</td>
+            <td>${expense.category.replace('_', ' ')}</td>
+            <td>₹${parseFloat(expense.amount).toFixed(2)}</td>
+            <td>${expense.description || '-'}</td>
+            <td>${expense.entered_by || '-'}</td>
+            <td><button class="btn-danger" onclick="deleteExpense(${expense.id})">Delete</button></td>
+          `;
+        });
+      } catch (err) {
+        alert('Error loading expenses: ' + err.message);
+      }
+    }
+
+    async function handleAddExpense(e) {
+      e.preventDefault();
+      try {
+        await api.addExpense(
+          document.getElementById('expenseCategory').value,
+          parseFloat(document.getElementById('expenseAmount').value),
+          document.getElementById('expenseDescription').value,
+          document.getElementById('expenseDate').value
+        );
+        alert('Expense added successfully');
+        e.target.reset();
+        await loadExpenses();
+        await loadOverviewData();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function deleteExpense(id) {
+      if (!confirm('Delete this expense?')) return;
+      try {
+        await api.deleteExpense(id);
+        await loadExpenses();
+        await loadOverviewData();
+      } catch (err) {
+        alert('Error deleting expense: ' + err.message);
+      }
+    }
+
+    async function loadExpenseSummary() {
+      try {
+        const currentMonth = document.getElementById('billMonth').value || new Date().toISOString().substring(0, 7);
+        const result = await api.getExpenseSummary(currentMonth);
+        const summary = result.data || {};
+        document.getElementById('totalExpenses').textContent = '₹' + (summary.total_expenses || 0);
+      } catch (err) {
+        console.error('Error loading expense summary:', err);
       }
     }
 
@@ -704,11 +845,9 @@
 
       const buttons = document.querySelectorAll('.tab-button');
       buttons.forEach(btn => btn.classList.remove('active'));
-      if (typeof event !== 'undefined' && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-      } else {
-        const fallback = document.querySelector(`.tab-button[onclick*="${tabName}"]`);
-        if (fallback) fallback.classList.add('active');
+      const activeButton = document.querySelector(`.tab-button[onclick*="switchTab('${tabName}')"]`);
+      if (activeButton) {
+        activeButton.classList.add('active');
       }
 
       if (tabName === 'members') loadMembers();

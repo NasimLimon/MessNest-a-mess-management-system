@@ -106,6 +106,36 @@ exports.updateMember = async (req, res) => {
   }
 };
 
+exports.updateCurrentMember = async (req, res) => {
+  try {
+    const memberId = await getMemberIdByUserId(req.user.id);
+    if (!memberId) {
+      return res.status(404).json({ success: false, error: 'Member profile not found' });
+    }
+
+    const existing = await query('SELECT m.full_name, m.phone, u.email FROM members m JOIN users u ON m.user_id = u.id WHERE m.id = ?', [memberId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, error: 'Member profile not found' });
+    }
+
+    const { fullName, phone, email } = req.body;
+    const updateName = fullName || existing[0].full_name;
+    const updatePhone = phone || existing[0].phone;
+    const updateEmail = email || existing[0].email;
+
+    await query('UPDATE members SET full_name = ?, phone = ? WHERE id = ?', [updateName, updatePhone, memberId]);
+    await query('UPDATE users SET email = ? WHERE id = ?', [updateEmail, req.user.id]);
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: { full_name: updateName, phone: updatePhone, email: updateEmail }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 exports.deleteMember = async (req, res) => {
   try {
     const members = await query('SELECT user_id FROM members WHERE id = ?', [req.params.id]);

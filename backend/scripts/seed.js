@@ -50,6 +50,22 @@ const seedDatabase = async () => {
       console.log('? Admin user already exists');
     }
 
+    // Create sample manager if doesn't exist
+    const [managerRows] = await connection.execute(
+      'SELECT id FROM users WHERE username = ?',
+      ['manager1']
+    );
+
+    if (managerRows.length === 0) {
+      await connection.execute(
+        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+        ['manager1', 'manager1@mestnest.local', bcryptjs.hashSync('manager123', 10), 'manager']
+      );
+      console.log('? Sample manager created (username: manager1, password: manager123)');
+    } else {
+      console.log('? Sample manager user already exists');
+    }
+
     // Create sample member if doesn't exist
     const [memberRows] = await connection.execute(
       'SELECT id FROM users WHERE username = ?',

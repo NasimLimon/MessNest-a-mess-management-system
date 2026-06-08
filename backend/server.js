@@ -18,6 +18,7 @@ app.use('/api/meals', require('./routes/meals'));
 app.use('/api/billing', require('./routes/billing'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/menu', require('./routes/menu'));
+app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/notices', require('./routes/notices'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/settings', require('./routes/settings'));

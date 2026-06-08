@@ -20,6 +20,7 @@
     <!-- Navigation Tabs -->
     <div class="tabs">
       <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+      <button class="tab-button" onclick="switchTab('profile')">Profile</button>
       <button class="tab-button" onclick="switchTab('bills')">My Bills</button>
       <button class="tab-button" onclick="switchTab('meals')">Meal History</button>
       <button class="tab-button" onclick="switchTab('menu')">Menu</button>
@@ -54,6 +55,30 @@
         <button onclick="switchTab('meals')" style="margin-right: 0.5rem;">Meal History</button>
         <button onclick="switchTab('complaints')" style="margin-right: 0.5rem;">Submit Complaint</button>
         <button onclick="switchTab('notices')">View Notices</button>
+      </div>
+    </div>
+
+    <!-- Profile Tab -->
+    <div id="profile" class="tab-content">
+      <div class="card">
+        <div class="card-title">Profile Management</div>
+        <form onsubmit="handleProfileUpdate(event)">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" id="profileFullName" required>
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="profileEmail" required>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="profilePhone">
+            </div>
+          </div>
+          <button type="submit">Save Profile</button>
+        </form>
       </div>
     </div>
 
@@ -179,20 +204,23 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/auth.js"></script>
+  <script src="/js/utils.js"></script>
   <script>
     let memberData = null;
     let currentMonth = new Date().toISOString().substring(0, 7);
 
-    asynitTheme();
-      inc function init() {
+    initTheme();
+
+    async function init() {
       if (!await checkAuth()) return;
-      if (currentUser.role === 'admin') {
+      if (['admin', 'manager'].includes(currentUser.role)) {
         window.location.href = '/pages/admin-dashboard.html';
         return;
       }
       document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username}!`;
       document.getElementById('mealMonthFilter').value = currentMonth;
       await loadMemberOverview();
+      await loadProfile();
     }
 
     async function loadMemberOverview() {
@@ -217,6 +245,39 @@
         document.getElementById('thisMonthMeals').textContent = summary.total_meals || 0;
       } catch (err) {
         console.error('Error:', err);
+      }
+    }
+
+    async function loadProfile() {
+      try {
+        const memberResult = await api.getCurrentMember();
+        const member = memberResult.data;
+        if (!member) return;
+
+        document.getElementById('profileFullName').value = member.full_name || '';
+        document.getElementById('profileEmail').value = member.email || '';
+        document.getElementById('profilePhone').value = member.phone || '';
+      } catch (err) {
+        console.error('Error loading profile:', err);
+      }
+    }
+
+    async function handleProfileUpdate(e) {
+      e.preventDefault();
+      try {
+        const fullName = document.getElementById('profileFullName').value;
+        const email = document.getElementById('profileEmail').value;
+        const phone = document.getElementById('profilePhone').value;
+
+        await api.request('/members/me', {
+          method: 'PUT',
+          body: JSON.stringify({ fullName, email, phone })
+        });
+
+        showToast('Profile updated successfully', 'success');
+        await loadProfile();
+      } catch (err) {
+        showToast('Error updating profile: ' + err.message, 'error');
       }
     }
 
@@ -394,11 +455,9 @@
 
       const buttons = document.querySelectorAll('.tab-button');
       buttons.forEach(btn => btn.classList.remove('active'));
-      if (typeof event !== 'undefined' && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-      } else {
-        const fallback = document.querySelector(`.tab-button[onclick*="${tabName}"]`);
-        if (fallback) fallback.classList.add('active');
+      const activeButton = document.querySelector(`.tab-button[onclick*="switchTab('${tabName}')"]`);
+      if (activeButton) {
+        activeButton.classList.add('active');
       }
 
       if (tabName === 'bills') loadBills();

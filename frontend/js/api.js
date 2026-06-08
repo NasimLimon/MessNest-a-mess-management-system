@@ -200,6 +200,40 @@ class ApiClient {
     return this.request('/menu/today');
   }
 
+  // Expenses
+  async addExpense(category, amount, description, expenseDate) {
+    return this.request('/expenses', {
+      method: 'POST',
+      body: JSON.stringify({ category, amount, description, expenseDate })
+    });
+  }
+
+  async getExpenses(month, category) {
+    let url = '/expenses';
+    const params = [];
+    if (month) params.push(`month=${month}`);
+    if (category) params.push(`category=${category}`);
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
+  }
+
+  async getExpenseSummary(month) {
+    let url = '/expenses/summary';
+    if (month) url += `?month=${month}`;
+    return this.request(url);
+  }
+
+  async deleteExpense(id) {
+    return this.request(`/expenses/${id}`, { method: 'DELETE' });
+  }
+
+  async updateExpense(id, data) {
+    return this.request(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  }
+
   // Notices
   async postNotice(title, content, priority = 'medium', expiresAt) {
     return this.request('/notices', {

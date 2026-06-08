@@ -3,6 +3,7 @@ module.exports = {
   // User roles
   ROLES: {
     ADMIN: 'admin',
+    MANAGER: 'manager',
     MEMBER: 'member',
   },
 
@@ -40,6 +41,17 @@ module.exports = {
     CASH: 'cash',
     TRANSFER: 'transfer',
     ONLINE: 'online',
+    OTHER: 'other',
+  },
+
+  // Expense categories
+  EXPENSE_CATEGORIES: {
+    GROCERIES: 'groceries',
+    MARKET: 'market',
+    UTILITIES: 'utilities',
+    RENT: 'rent',
+    SALARY: 'salary',
+    MAINTENANCE: 'maintenance',
     OTHER: 'other',
   },
 

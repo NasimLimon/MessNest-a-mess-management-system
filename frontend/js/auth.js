@@ -21,11 +21,15 @@ function redirectToLogin() {
 }
 
 function redirectToDashboard() {
-  if (currentUser?.role === 'admin') {
+  if (['admin', 'manager'].includes(currentUser?.role)) {
     window.location.href = '/pages/admin-dashboard.html';
   } else {
     window.location.href = '/pages/member-dashboard.html';
   }
+}
+
+function isAdmin() {
+  return ['admin', 'manager'].includes(currentUser?.role);
 }
 
 async function handleLogin(e) {
@@ -66,8 +70,8 @@ function logout() {
   redirectToLogin();
 }
 
-function isAdmin() {
-  return currentUser?.role === 'admin';
+function isManager() {
+  return currentUser?.role === 'manager';
 }
 
 function isMember() {

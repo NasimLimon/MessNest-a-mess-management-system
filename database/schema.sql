@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(255) UNIQUE NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'member') NOT NULL,
+  role ENUM('admin', 'manager', 'member') NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,6 +69,18 @@ CREATE TABLE IF NOT EXISTS payments (
   status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
   FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
+);
+
+-- Expenses table (expense tracking)
+CREATE TABLE IF NOT EXISTS expenses (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  category ENUM('groceries', 'market', 'utilities', 'rent', 'salary', 'maintenance', 'other') NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  description LONGTEXT,
+  expense_date DATE NOT NULL,
+  created_by INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Notices table (announcements)
