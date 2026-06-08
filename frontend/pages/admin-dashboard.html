@@ -257,6 +257,10 @@
 
     async function init() {
       if (!await checkAuth()) return;
+      if (currentUser.role !== 'admin') {
+        window.location.href = '/pages/member-dashboard.html';
+        return;
+      }
       document.getElementById('userInfo').textContent = `Welcome, ${currentUser.username}!`;
       await loadOverviewData();
       await loadMembers();
@@ -272,11 +276,12 @@
     async function loadOverviewData() {
       try {
         const currentMonth = new Date().toISOString().substring(0, 7);
-        const stats = await api.getMessStats(currentMonth);
-        document.getElementById('totalMembers').textContent = stats.total_members;
-        document.getElementById('totalMeals').textContent = stats.total_meals;
-        document.getElementById('totalCollected').textContent = '₹' + stats.total_collected;
-        document.getElementById('totalDue').textContent = '₹' + stats.total_due;
+        const result = await api.getMessStats(currentMonth);
+        const stats = result.data || {};
+        document.getElementById('totalMembers').textContent = stats.total_members || 0;
+        document.getElementById('totalMeals').textContent = stats.total_meals || 0;
+        document.getElementById('totalCollected').textContent = '₹' + (stats.total_collected || 0);
+        document.getElementById('totalDue').textContent = '₹' + (stats.total_due || 0);
       } catch (err) {
         console.error('Error loading stats:', err);
       }
@@ -284,7 +289,8 @@
 
     async function loadMembers() {
       try {
-        allMembers = await api.getMembers();
+        const result = await api.getMembers();
+        allMembers = result.data || [];
         const tbody = document.getElementById('membersList');
         const select = document.getElementById('mealMemberId');
 
@@ -328,7 +334,7 @@
           document.getElementById('newMemberPhone').value
         );
         alert('Member added successfully');
-        document.getElementById('addMemberForm').reset();
+        document.querySelector('#addMemberForm form').reset();
         showAddMemberForm();
         await loadMembers();
       } catch (err) {
@@ -357,6 +363,7 @@
         );
         alert('Meal recorded successfully');
         e.target.reset();
+        setMealDate();
         await loadMeals();
       } catch (err) {
         alert('Error: ' + err.message);
@@ -365,7 +372,8 @@
 
     async function loadMeals() {
       try {
-        const meals = await api.getMealHistory();
+        const result = await api.getMealHistory();
+        const meals = result.data || [];
         const tbody = document.getElementById('mealsList');
         tbody.innerHTML = '';
         meals.slice(0, 10).forEach(meal => {
@@ -399,7 +407,8 @@
 
     async function loadBills() {
       try {
-        const bills = await api.getBills();
+        const result = await api.getBills();
+        const bills = result.data || [];
         const tbody = document.getElementById('billsList');
         tbody.innerHTML = '';
         bills.forEach(bill => {
@@ -409,7 +418,7 @@
             <td>${bill.month}</td>
             <td>${bill.meal_count}</td>
             <td>₹${bill.total_amount}</td>
-            <td><span class="badge badge-info">Generated</span></td>
+            <td><span class="badge badge-info">${bill.status || 'generated'}</span></td>
           `;
         });
       } catch (err) {
@@ -439,7 +448,8 @@
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-        const menu = await api.getMenu(startDate, endDate);
+        const result = await api.getMenu(startDate, endDate);
+        const menu = result.data || [];
         const tbody = document.getElementById('menuList');
         tbody.innerHTML = '';
         menu.forEach(item => {
@@ -473,7 +483,8 @@
 
     async function loadNotices() {
       try {
-        const notices = await api.getNotices();
+        const result = await api.getNotices();
+        const notices = result.data || [];
         const div = document.getElementById('noticesList');
         div.innerHTML = '';
         notices.forEach(notice => {
@@ -508,7 +519,8 @@
 
     async function loadComplaints() {
       try {
-        const complaints = await api.getComplaints();
+        const result = await api.getComplaints();
+        const complaints = result.data || [];
         const div = document.getElementById('complaintsList');
         div.innerHTML = '';
         complaints.forEach(complaint => {
@@ -549,9 +561,13 @@
 
       const buttons = document.querySelectorAll('.tab-button');
       buttons.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      if (typeof event !== 'undefined' && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      } else {
+        const fallback = document.querySelector(`.tab-button[onclick*="${tabName}"]`);
+        if (fallback) fallback.classList.add('active');
+      }
 
-      // Load data for specific tabs
       if (tabName === 'members') loadMembers();
       if (tabName === 'meals') loadMeals();
       if (tabName === 'billing') loadBills();
