@@ -212,75 +212,99 @@
 
     <!-- Menu Tab -->
     <div id="menu" class="tab-content">
-      <div class="card">
-        <div class="card-title">Menu Management</div>
-        <form onsubmit="handleAddMenu(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="menuDate" required>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Menu Management</h4>
+          <div class="section-actions">
+            <button onclick="loadMenu()">Refresh Menu</button>
           </div>
-          <div class="form-group">
-            <label>Meal Type</label>
-            <select id="menuType" required>
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="dinner">Dinner</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Items (comma-separated)</label>
-            <input type="text" id="menuItems" required placeholder="e.g., Rice, Dal, Vegetables">
+        </div>
+
+        <form onsubmit="handleAddMenu(event)" style="background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="menuDate" required>
+            </div>
+            <div class="form-group">
+              <label>Meal Type</label>
+              <select id="menuType" required>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Items (comma-separated)</label>
+              <input type="text" id="menuItems" required placeholder="e.g., Rice, Dal, Vegetables">
+            </div>
           </div>
           <button type="submit">Add Menu</button>
         </form>
 
-        <h4>Menu</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Items</th>
-            </tr>
-          </thead>
-          <tbody id="menuList"></tbody>
-        </table>
+        <div class="section-header" style="margin-top: 2rem;">
+          <h4>Published Menu</h4>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Items</th>
+              </tr>
+            </thead>
+            <tbody id="menuList"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- Notices Tab -->
     <div id="notices" class="tab-content">
-      <div class="card">
-        <div class="card-title">Post Notice</div>
-        <form onsubmit="handlePostNotice(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label>Title</label>
-            <input type="text" id="noticeTitle" required>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Notice Board</h4>
+          <div class="section-actions">
+            <button onclick="loadNotices()">Refresh Notices</button>
           </div>
-          <div class="form-group">
-            <label>Content</label>
-            <textarea id="noticeContent" required></textarea>
-          </div>
-          <div class="form-group">
-            <label>Priority</label>
-            <select id="noticePriority">
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
+        </div>
+
+        <form onsubmit="handlePostNotice(event)" style="background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Title</label>
+              <input type="text" id="noticeTitle" required>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label>Content</label>
+              <textarea id="noticeContent" required></textarea>
+            </div>
+            <div class="form-group">
+              <label>Priority</label>
+              <select id="noticePriority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
           <button type="submit">Post Notice</button>
         </form>
 
-        <h4>Notices</h4>
         <div id="noticesList"></div>
       </div>
     </div>
 
     <!-- Complaints Tab -->
     <div id="complaints" class="tab-content">
-      <div class="card">
-        <div class="card-title">Manage Complaints</div>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Manage Complaints</h4>
+          <div class="section-actions">
+            <button onclick="loadComplaints()">Refresh Complaints</button>
+          </div>
+        </div>
         <div id="complaintsList"></div>
       </div>
     </div>
