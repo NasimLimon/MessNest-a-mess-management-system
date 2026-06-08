@@ -303,6 +303,44 @@ var(--surface);
   margin: 2rem 0;
 }
 
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.section-panel {
+  background-color: var(--surface);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+
+.section-panel .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-panel .section-header h4 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--dark);
+}
+
+.section-panel .section-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.section-panel .section-actions button {
+  min-width: 140px;
+}
+
 .stat-card {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
