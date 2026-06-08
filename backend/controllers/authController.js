@@ -57,7 +57,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    const users = await query('SELECT * FROM users WHERE username = ?', [username]);
+    const users = await query('SELECT * FROM users WHERE username = ? OR email = ?', [username, username]);
     if (users.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
