@@ -10,6 +10,7 @@
   <nav>
     <div class="logo">🍽️ MealNest - Member Dashboard</div>
     <div class="user-info">
+      <button id="themeToggleButton" class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
       <span id="userInfo">Loading...</span>
       <button onclick="logout()">Logout</button>
     </div>
@@ -182,7 +183,8 @@
     let memberData = null;
     let currentMonth = new Date().toISOString().substring(0, 7);
 
-    async function init() {
+    asynitTheme();
+      inc function init() {
       if (!await checkAuth()) return;
       if (currentUser.role === 'admin') {
         window.location.href = '/pages/admin-dashboard.html';

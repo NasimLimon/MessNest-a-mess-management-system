@@ -5,17 +5,21 @@
 }
 
 :root {
-  --primary: #667eea;
-  --primary-dark: #5568d3;
-  --secondary: #764ba2;
-  --success: #48bb78;
-  --danger: #f56565;
-  --warning: #ecc94b;
-  --info: #4299e1;
-  --light: #f7fafc;
-  --dark: #2d3748;
-  --gray: #718096;
-  --gray-light: #e2e8f0;
+  --primary: #7c3aed;
+  --primary-dark: #5b21b6;
+  --secondary: #2563eb;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #38bdf8;
+  --light: #0f172a;
+  --lighter: #111827;
+  --dark: #e2e8f0;
+  --gray: #94a3b8;
+  --gray-light: #334155;
+  --surface: #1f2937;
+  --surface-2: #111827;
+  --card: #111827;
 }
 
 html {
@@ -37,7 +41,7 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.25);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -48,7 +52,53 @@ nav .logo {
   font-weight: 700;
   letter-spacing: -0.5px;
 }
+nav .theme-toggle {
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: white;
+  border-radius: 999px;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
 
+nav .theme-toggle:hover {
+  background: rgba(255,255,255,0.24);
+}
+
+body.light-mode {
+  --light: #f7fafc;
+  --lighter: #e2e8f0;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --card: #ffffff;
+  --dark: #0f172a;
+  --gray: #64748b;
+  --gray-light: #e2e8f0;
+  background-color: var(--light);
+  color: var(--dark);
+}
+
+body.light-mode nav {
+  background: linear-gradient(135deg, #eef2ff 0%, #e2e8f0 100%);
+  color: var(--dark);
+}
+
+body.light-mode nav .theme-toggle {
+  background: rgba(15,23,42,0.08);
+  border-color: rgba(15,23,42,0.12);
+  color: var(--dark);
+}
+
+body.light-mode .alert {
+  background-color: #f8fafc;
+}
+
+body.light-mode table tr:hover {
+  background-color: rgba(15,23,42,0.04);
+}
 nav .user-info {
   display: flex;
   gap: 1.5rem;
@@ -85,10 +135,10 @@ nav button:hover {
 
 /* Forms */
 form {
-  background-color: white;
+  background-color: var(--surface);
   padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   max-width: 500px;
   margin: 2rem auto;
 }
@@ -107,7 +157,9 @@ label {
 input, textarea, select {
   width: 100%;
   padding: 0.85rem 1rem;
-  border: 2px solid var(--gray-light);
+  border: 2px solid rgba(255,255,255,0.08);
+  background-color: var(--surface-2);
+  color: var(--dark);
   border-radius: 6px;
   font-size: 1rem;
   transition: all 0.3s;
@@ -117,7 +169,7 @@ input, textarea, select {
 input:focus, textarea:focus, select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.18);
 }
 
 input::placeholder {
@@ -184,8 +236,8 @@ button:active {
 table {
   width: 100%;
   border-collapse: collapse;
-  background-color: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background-color: var(--surface);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25);
   margin: 1.5rem 0;
   border-radius: 8px;
   overflow: hidden;
@@ -201,15 +253,16 @@ table th {
 
 table td {
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid var(--gray-light);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  color: var(--dark);
 }
 
 table tr:hover {
-  background-color: var(--light);
+  background-color: rgba(255,255,255,0.04);
 }
-
-table tr:last-child td {
-  border-bottom: none;
+var(--surface);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.25
 }
 
 /* Cards */
@@ -362,10 +415,10 @@ table tr:last-child td {
   max-width: 450px;
   margin: 0 auto;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  display: flex;var(--surface);
+  padding: 3rem;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.35r(--primary) 0%, var(--secondary) 100%);
 }
 
 .auth-form {
@@ -593,10 +646,11 @@ table tr:last-child td {
 
 /* Toast Notification */
 .toast-container {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 2000;
+  position: fivar(--surface-2);
+  color: var(--dark);
+  padding: 1.2rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3
 }
 
 .toast {

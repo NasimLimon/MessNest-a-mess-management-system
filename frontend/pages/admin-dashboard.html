@@ -10,6 +10,7 @@
   <nav>
     <div class="logo">🍽️ MealNest - Admin Dashboard</div>
     <div class="user-info">
+      <button id="themeToggleButton" class="theme-toggle" onclick="toggleTheme()">Light Mode</button>
       <span id="userInfo">Loading...</span>
       <button onclick="logout()">Logout</button>
     </div>
@@ -256,6 +257,7 @@
     let allMembers = [];
 
     async function init() {
+      initTheme();
       if (!await checkAuth()) return;
       if (currentUser.role !== 'admin') {
         window.location.href = '/pages/member-dashboard.html';

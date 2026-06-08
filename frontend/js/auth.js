@@ -6,7 +6,8 @@ async function checkAuth() {
       redirectToLogin();
       return false;
     }
-    currentUser = await api.getCurrentUser();
+    const result = await api.getCurrentUser();
+    currentUser = result.data;
     return true;
   } catch (err) {
     console.error('Auth check failed:', err);

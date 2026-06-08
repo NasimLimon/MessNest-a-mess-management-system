@@ -294,3 +294,31 @@ function getMonthName(monthIndex) {
     'July', 'August', 'September', 'October', 'November', 'December'];
   return months[monthIndex];
 }
+
+const themeStorageKey = 'messnestTheme';
+
+function applyTheme(theme) {
+  const html = document.documentElement;
+  if (theme === 'light') {
+    html.classList.add('light-mode');
+  } else {
+    html.classList.remove('light-mode');
+  }
+
+  const toggleButton = document.getElementById('themeToggleButton');
+  if (toggleButton) {
+    toggleButton.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+  }
+}
+
+function toggleTheme() {
+  const isLight = document.documentElement.classList.contains('light-mode');
+  const nextTheme = isLight ? 'dark' : 'light';
+  localStorage.setItem(themeStorageKey, nextTheme);
+  applyTheme(nextTheme);
+}
+
+function initTheme() {
+  const storedTheme = localStorage.getItem(themeStorageKey) || 'dark';
+  applyTheme(storedTheme);
+}
