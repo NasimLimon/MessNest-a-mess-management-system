@@ -60,118 +60,153 @@
 
     <!-- Members Tab -->
     <div id="members" class="tab-content">
-      <div class="card">
-        <div class="card-title">Members Management</div>
-        <button onclick="showAddMemberForm()" style="margin-bottom: 1rem;">Add New Member</button>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Members Management</h4>
+          <div class="section-actions">
+            <button onclick="showAddMemberForm()">Add New Member</button>
+          </div>
+        </div>
 
-        <div id="addMemberForm" style="display: none; background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-          <h4>Add New Member</h4>
+        <div id="addMemberForm" style="display: none; background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
           <form onsubmit="handleAddMember(event)">
-            <div class="form-group">
-              <label>Full Name</label>
-              <input type="text" id="newMemberName" required>
+            <div class="panel-grid">
+              <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="newMemberName" required>
+              </div>
+              <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="newMemberUsername" required>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="newMemberEmail" required>
+              </div>
+              <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="newMemberPassword" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="tel" id="newMemberPhone">
+              </div>
             </div>
-            <div class="form-group">
-              <label>Username</label>
-              <input type="text" id="newMemberUsername" required>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem;">
+              <button type="submit">Add Member</button>
+              <button type="button" onclick="showAddMemberForm()" class="btn-secondary">Cancel</button>
             </div>
-            <div class="form-group">
-              <label>Email</label>
-              <input type="email" id="newMemberEmail" required>
-            </div>
-            <div class="form-group">
-              <label>Password</label>
-              <input type="password" id="newMemberPassword" required>
-            </div>
-            <div class="form-group">
-              <label>Phone</label>
-              <input type="tel" id="newMemberPhone">
-            </div>
-            <button type="submit">Add Member</button>
-            <button type="button" onclick="showAddMemberForm()" class="btn-secondary">Cancel</button>
           </form>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Join Date</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="membersList"></tbody>
-        </table>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Join Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="membersList"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- Meals Tab -->
     <div id="meals" class="tab-content">
-      <div class="card">
-        <div class="card-title">Record Meals</div>
-        <form onsubmit="handleRecordMeal(event)" style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-          <div class="form-group">
-            <label>Member</label>
-            <select id="mealMemberId" required></select>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Record Meals</h4>
+          <div class="section-actions">
+            <button onclick="setMealDate()">Today</button>
           </div>
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="mealDate" required>
-          </div>
-          <div class="form-group">
-            <label>Meal Type</label>
-            <select id="mealType" required>
-              <option value="breakfast">Breakfast</option>
-              <option value="lunch">Lunch</option>
-              <option value="dinner">Dinner</option>
-            </select>
+        </div>
+
+        <form onsubmit="handleRecordMeal(event)" style="background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Member</label>
+              <select id="mealMemberId" required></select>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="mealDate" required>
+            </div>
+            <div class="form-group">
+              <label>Meal Type</label>
+              <select id="mealType" required>
+                <option value="breakfast">Breakfast</option>
+                <option value="lunch">Lunch</option>
+                <option value="dinner">Dinner</option>
+              </select>
+            </div>
           </div>
           <button type="submit">Record Meal</button>
         </form>
 
-        <h4>Recent Meals</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Recorded</th>
-            </tr>
-          </thead>
-          <tbody id="mealsList"></tbody>
-        </table>
+        <div class="section-header" style="margin-top: 2rem;">
+          <h4>Recent Meals</h4>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Recorded</th>
+              </tr>
+            </thead>
+            <tbody id="mealsList"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- Billing Tab -->
     <div id="billing" class="tab-content">
-      <div class="card">
-        <div class="card-title">Billing Management</div>
-        <div style="background-color: #f9f9f9; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
-          <label>Generate Bills for Month:</label>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
-            <input type="month" id="billMonth" required>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Billing Management</h4>
+          <div class="section-actions">
             <button onclick="handleGenerateBills()">Generate Bills</button>
           </div>
         </div>
 
-        <h4>Bills</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Month</th>
-              <th>Meals</th>
-              <th>Total Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="billsList"></tbody>
-        </table>
+        <div style="background-color: transparent; padding: 0; border-radius: 0; margin-bottom: 1rem;">
+          <div class="panel-grid">
+            <div class="form-group">
+              <label>Generate for Month</label>
+              <input type="month" id="billMonth" required>
+            </div>
+            <div class="form-group" style="align-self:flex-end;">
+              <button type="button" onclick="handleGenerateBills()">Create Billing</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-header" style="margin-top: 2rem;">
+          <h4>Bill Records</h4>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Month</th>
+                <th>Meals</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="billsList"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
