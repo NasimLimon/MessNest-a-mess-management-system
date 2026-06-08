@@ -18,13 +18,10 @@ class ApiClient {
         ...options,
         headers: this.getHeaders()
       });
-
       const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.error || data.message || `HTTP ${response.status}`);
       }
-      
       return data;
     } catch (error) {
       console.error('API Error:', error);
@@ -70,6 +67,10 @@ class ApiClient {
     return this.request('/members');
   }
 
+  async getCurrentMember() {
+    return this.request('/members/me');
+  }
+
   async getMember(id) {
     return this.request(`/members/${id}`);
   }
@@ -110,7 +111,12 @@ class ApiClient {
   }
 
   async getMonthlySummary(memberId, month) {
-    return this.request(`/meals/summary/monthly?memberId=${memberId}&month=${month}`);
+    let url = '/meals/summary/monthly';
+    const params = [];
+    if (memberId) params.push(`memberId=${memberId}`);
+    if (month) params.push(`month=${month}`);
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async getMemberMeals(memberId, month) {
@@ -120,10 +126,10 @@ class ApiClient {
   }
 
   // Billing
-  async generateBills(month) {
+  async generateBills(month, mealRate, fixedCost) {
     return this.request('/billing/generate', {
       method: 'POST',
-      body: JSON.stringify({ month })
+      body: JSON.stringify({ month, mealRate, fixedCost })
     });
   }
 
@@ -155,12 +161,13 @@ class ApiClient {
   }
 
   async getPayments(memberId, billId, month) {
-    let url = '/payments?';
+    let url = '/payments';
     const params = [];
     if (memberId) params.push(`memberId=${memberId}`);
     if (billId) params.push(`billId=${billId}`);
     if (month) params.push(`month=${month}`);
-    return this.request(url + params.join('&'));
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async getPaymentHistory(memberId) {
@@ -180,12 +187,13 @@ class ApiClient {
   }
 
   async getMenu(startDate, endDate, mealType) {
-    let url = '/menu?';
+    let url = '/menu';
     const params = [];
     if (startDate) params.push(`startDate=${startDate}`);
     if (endDate) params.push(`endDate=${endDate}`);
     if (mealType) params.push(`mealType=${mealType}`);
-    return this.request(url + params.join('&'));
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async getTodayMenu() {
@@ -217,11 +225,12 @@ class ApiClient {
   }
 
   async getComplaints(status, complaintType) {
-    let url = '/complaints?';
+    let url = '/complaints';
     const params = [];
     if (status) params.push(`status=${status}`);
     if (complaintType) params.push(`complaintType=${complaintType}`);
-    return this.request(url + params.join('&'));
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
   }
 
   async updateComplaintStatus(id, status, response) {
@@ -233,6 +242,18 @@ class ApiClient {
 
   async getMemberComplaints(memberId) {
     return this.request(`/complaints/member/${memberId}`);
+  }
+
+  // Settings
+  async getSettings() {
+    return this.request('/settings');
+  }
+
+  async updateSettings(data) {
+    return this.request('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
   }
 }
 

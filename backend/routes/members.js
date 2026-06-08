@@ -3,6 +3,7 @@ const memberController = require('../controllers/memberController');
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 const router = express.Router();
 
+router.get('/me', authMiddleware, memberController.getCurrentMember);
 router.get('/', authMiddleware, memberController.getAllMembers);
 router.get('/:id', authMiddleware, memberController.getMemberById);
 router.post('/', authMiddleware, adminOnly, memberController.addMember);

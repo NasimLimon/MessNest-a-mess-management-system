@@ -20,6 +20,7 @@ app.use('/api/payments', require('./routes/payments'));
 app.use('/api/menu', require('./routes/menu'));
 app.use('/api/notices', require('./routes/notices'));
 app.use('/api/complaints', require('./routes/complaints'));
+app.use('/api/settings', require('./routes/settings'));
 
 // Serve frontend
 app.get('/', (req, res) => {
