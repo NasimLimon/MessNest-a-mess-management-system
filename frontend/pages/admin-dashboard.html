@@ -35,6 +35,14 @@
           <h3 id="totalMembers">0</h3>
           <p>Total Members</p>
         </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #38b2ac 0%, #2c7a7b 100%);">
+          <h3 id="activeMembers">0</h3>
+          <p>Active Members</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f6ad55 0%, #dd6b20 100%);">
+          <h3 id="inactiveMembers">0</h3>
+          <p>Inactive Members</p>
+        </div>
         <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
           <h3 id="totalMeals">0</h3>
           <p>Total Meals (This Month)</p>
@@ -44,17 +52,62 @@
           <p>Total Collected</p>
         </div>
         <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-          <h3 id="totalDue">₹0</h3>
-          <p>Pending Dues</p>
+          <h3 id="pendingComplaints">0</h3>
+          <p>Open Complaints</p>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Quick Actions</div>
-        <button onclick="switchTab('members')" style="margin-right: 0.5rem;">Manage Members</button>
-        <button onclick="switchTab('meals')" style="margin-right: 0.5rem;">Record Meals</button>
-        <button onclick="switchTab('billing')" style="margin-right: 0.5rem;">Generate Bills</button>
-        <button onclick="switchTab('complaints')">View Complaints</button>
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Quick Actions</h4>
+          <div class="section-actions">
+            <button onclick="switchTab('members')">Manage Members</button>
+            <button onclick="switchTab('meals')">Record Meals</button>
+            <button onclick="switchTab('billing')">Generate Bills</button>
+            <button onclick="switchTab('complaints')">View Complaints</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-panel">
+        <div class="section-header">
+          <h4>Performance Summary</h4>
+          <div class="section-actions">
+            <button onclick="loadOverviewData()">Refresh Summary</button>
+          </div>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <div>
+              <div class="summary-title">Billing Coverage</div>
+              <div class="summary-description">Percentage of billed amount collected this cycle.</div>
+            </div>
+            <div class="summary-value" id="billingCoverageLabel">0%</div>
+            <div class="progress-bar">
+              <div id="billingCoverage" class="progress-fill"></div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <div class="summary-title">Member Activation</div>
+              <div class="summary-description">Active membership rate across all registered users.</div>
+            </div>
+            <div class="summary-value" id="memberActivationLabel">0%</div>
+            <div class="progress-bar">
+              <div id="memberActivation" class="progress-fill"></div>
+            </div>
+          </div>
+          <div class="summary-card">
+            <div>
+              <div class="summary-title">Complaint Load</div>
+              <div class="summary-description">Open issues that still need resolution.</div>
+            </div>
+            <div class="summary-value" id="complaintLoadLabel">0%</div>
+            <div class="progress-bar">
+              <div id="complaintLoad" class="progress-fill warning"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -337,12 +390,41 @@
     async function loadOverviewData() {
       try {
         const currentMonth = new Date().toISOString().substring(0, 7);
-        const result = await api.getMessStats(currentMonth);
-        const stats = result.data || {};
-        document.getElementById('totalMembers').textContent = stats.total_members || 0;
+        const statsResult = await api.getMessStats(currentMonth);
+        const stats = statsResult.data || {};
+
+        const membersResult = await api.getMembers();
+        const members = membersResult.data || [];
+        const activeCount = members.filter(member => member.status === 'active').length;
+        const inactiveCount = members.filter(member => member.status !== 'active').length;
+        const totalMembers = members.length || 1;
+
+        const complaintsResult = await api.getComplaints();
+        const complaints = complaintsResult.data || [];
+        const pendingCount = complaints.filter(complaint => complaint.status === 'open' || complaint.status === 'in_progress').length;
+        const totalComplaints = Math.max(complaints.length, 1);
+
+        const totalCollected = stats.total_collected || 0;
+        const totalDue = stats.total_due || 0;
+        const billingCoverageValue = totalCollected + totalDue > 0 ? Math.round((totalCollected / (totalCollected + totalDue)) * 100) : 100;
+        const activationValue = Math.round((activeCount / totalMembers) * 100);
+        const complaintValue = Math.min(100, Math.round((pendingCount / totalComplaints) * 100));
+
+        document.getElementById('totalMembers').textContent = totalMembers;
+        document.getElementById('activeMembers').textContent = activeCount;
+        document.getElementById('inactiveMembers').textContent = inactiveCount;
         document.getElementById('totalMeals').textContent = stats.total_meals || 0;
-        document.getElementById('totalCollected').textContent = '₹' + (stats.total_collected || 0);
-        document.getElementById('totalDue').textContent = '₹' + (stats.total_due || 0);
+        document.getElementById('totalCollected').textContent = '₹' + totalCollected;
+        document.getElementById('pendingComplaints').textContent = pendingCount;
+
+        document.getElementById('billingCoverageLabel').textContent = `${billingCoverageValue}%`;
+        document.getElementById('billingCoverage').style.width = `${billingCoverageValue}%`;
+
+        document.getElementById('memberActivationLabel').textContent = `${activationValue}%`;
+        document.getElementById('memberActivation').style.width = `${activationValue}%`;
+
+        document.getElementById('complaintLoadLabel').textContent = `${complaintValue}%`;
+        document.getElementById('complaintLoad').style.width = `${complaintValue}%`;
       } catch (err) {
         console.error('Error loading stats:', err);
       }
