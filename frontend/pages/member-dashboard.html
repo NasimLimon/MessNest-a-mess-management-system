@@ -195,20 +195,23 @@
 
     async function loadMemberOverview() {
       try {
-        const member = await api.getMember(currentUser.id);
+        const memberResult = await api.getCurrentMember();
+        const member = memberResult.data;
         memberData = member;
 
-        const billStatus = await api.getMemberBillStatus(member.id);
-        const currentBill = billStatus.find(b => b.month === currentMonth);
+        const billStatusResult = await api.getMemberBillStatus(member.id);
+        const bills = billStatusResult.data || [];
+        const currentBill = bills.find(b => b.month === currentMonth);
 
         if (currentBill) {
-          document.getElementById('thisMonthMeals').textContent = '?';
           document.getElementById('thisMonthBill').textContent = '₹' + currentBill.total_amount;
           document.getElementById('amountPaid').textContent = '₹' + currentBill.paid_amount;
           document.getElementById('amountDue').textContent = '₹' + currentBill.due_amount;
         }
 
-        const summary = await api.getMonthlySummary(member.id, currentMonth);
+        const summaryResult = await api.getMonthlySummary(member.id, currentMonth);
+        const summaryData = summaryResult.data || [];
+        const summary = summaryData[0] || {};
         document.getElementById('thisMonthMeals').textContent = summary.total_meals || 0;
       } catch (err) {
         console.error('Error:', err);
@@ -217,13 +220,15 @@
 
     async function loadBills() {
       try {
-        const member = await api.getMember(currentUser.id);
-        const billStatus = await api.getMemberBillStatus(member.id);
+        const memberResult = await api.getCurrentMember();
+        const member = memberResult.data;
+        const billStatusResult = await api.getMemberBillStatus(member.id);
+        const bills = billStatusResult.data || [];
 
         const tbody = document.getElementById('billsList');
         tbody.innerHTML = '';
 
-        billStatus.forEach(bill => {
+        bills.forEach(bill => {
           const row = tbody.insertRow();
           row.innerHTML = `
             <td>${bill.month}</td>
@@ -231,7 +236,7 @@
             <td>₹${bill.total_amount}</td>
             <td>₹${bill.paid_amount}</td>
             <td>₹${bill.due_amount}</td>
-            <td><span class="badge ${bill.status === 'paid' ? 'badge-success' : 'badge-danger'}">${bill.status}</span></td>
+            <td><span class="badge ${bill.status === 'paid' ? 'badge-success' : bill.status === 'partial' ? 'badge-warning' : 'badge-danger'}">${bill.status}</span></td>
             <td>
               ${bill.due_amount > 0 ? `<button onclick="showPaymentForm(${bill.id}, ${bill.due_amount})">Pay</button>` : 'Paid'}
             </td>
@@ -251,11 +256,9 @@
     async function handlePayment(e) {
       e.preventDefault();
       try {
-        const member = await api.getMember(currentUser.id);
         const billId = parseInt(document.getElementById('paymentAmount').dataset.billId);
         const amount = parseFloat(document.getElementById('paymentAmount').value);
-
-        await api.recordPayment(member.id, billId, amount, document.getElementById('paymentMethod').value);
+        await api.recordPayment(null, billId, amount, document.getElementById('paymentMethod').value);
         alert('Payment recorded successfully');
         document.getElementById('paymentForm').style.display = 'none';
         await loadBills();
@@ -267,9 +270,11 @@
 
     async function loadMealHistory() {
       try {
-        const member = await api.getMember(currentUser.id);
+        const memberResult = await api.getCurrentMember();
+        const member = memberResult.data;
         const month = document.getElementById('mealMonthFilter').value;
-        const meals = await api.getMemberMeals(member.id, month);
+        const mealsResult = await api.getMemberMeals(member.id, month);
+        const meals = mealsResult.data || [];
 
         const tbody = document.getElementById('mealsList');
         tbody.innerHTML = '';
@@ -292,8 +297,8 @@
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
         const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-        const menu = await api.getMenu(startDate, endDate);
-
+        const result = await api.getMenu(startDate, endDate);
+        const menu = result.data || [];
         const div = document.getElementById('menuList');
         div.innerHTML = '';
 
@@ -321,7 +326,8 @@
 
     async function loadNotices() {
       try {
-        const notices = await api.getNotices();
+        const result = await api.getNotices();
+        const notices = result.data || [];
         const div = document.getElementById('noticesList');
         div.innerHTML = '';
 
@@ -357,8 +363,10 @@
 
     async function loadComplaintsHistory() {
       try {
-        const member = await api.getMember(currentUser.id);
-        const complaints = await api.getMemberComplaints(member.id);
+        const memberResult = await api.getCurrentMember();
+        const member = memberResult.data;
+        const complaintsResult = await api.getMemberComplaints(member.id);
+        const complaints = complaintsResult.data || [];
 
         const tbody = document.getElementById('complaintsList');
         tbody.innerHTML = '';
@@ -384,9 +392,13 @@
 
       const buttons = document.querySelectorAll('.tab-button');
       buttons.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      if (typeof event !== 'undefined' && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+      } else {
+        const fallback = document.querySelector(`.tab-button[onclick*="${tabName}"]`);
+        if (fallback) fallback.classList.add('active');
+      }
 
-      // Load data for specific tabs
       if (tabName === 'bills') loadBills();
       if (tabName === 'meals') loadMealHistory();
       if (tabName === 'menu') loadMenu();
