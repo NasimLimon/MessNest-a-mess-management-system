@@ -38,8 +38,12 @@
           >
         </div>
         <div class="auth-form remember-me">
-          <input type="checkbox" id="adminLogin">
-          <label for="adminLogin">Login as admin</label>
+          <label for="loginRole">Login role</label>
+          <select id="loginRole">
+            <option value="">Auto (any role)</option>
+            <option value="admin">Admin only</option>
+            <option value="member">Member only</option>
+          </select>
         </div>
 
         <div class="auth-form remember-me">
@@ -83,7 +87,7 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const rememberMe = document.getElementById('rememberMe').checked;
-      const adminLogin = document.getElementById('adminLogin').checked;
+      const loginRole = document.getElementById('loginRole').value;
 
       const loginBtn = document.getElementById('loginBtn');
       const loginText = document.getElementById('loginText');
@@ -97,11 +101,18 @@
         const result = await api.login(username, password);
         currentUser = result.user;
 
-        // If admin login option selected, require the returned user to be an admin
-        if (adminLogin && currentUser.role !== 'admin') {
-          showAlert('errorAlert', 'Admin access required. Use an admin account.', 'error');
-          showToast('Admin login failed: insufficient privileges', 'error');
-          return;
+        // If a specific role was requested, ensure returned user matches
+        if (loginRole) {
+          if (loginRole === 'admin' && currentUser.role !== 'admin') {
+            showAlert('errorAlert', 'Admin access required. Use an admin account.', 'error');
+            showToast('Admin login failed: insufficient privileges', 'error');
+            return;
+          }
+          if (loginRole === 'member' && currentUser.role !== 'member') {
+            showAlert('errorAlert', 'Member access required. Use a member account.', 'error');
+            showToast('Login failed: insufficient privileges', 'error');
+            return;
+          }
         }
 
         if (rememberMe) {
