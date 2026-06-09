@@ -210,7 +210,7 @@ exports.markBillPaid = async (req, res) => {
     if (due <= 0) return res.json({ success: true, message: 'Bill already fully paid' });
 
     // Insert a payment record as admin action
-    await query('INSERT INTO payments (member_id, bill_id, amount, payment_method, status) VALUES (?, ?, ?, ?, ?)', [bill.member_id, billId, due, 'admin', 'completed']);
+    await query('INSERT INTO payments (member_id, bill_id, amount, payment_method, status) VALUES (?, ?, ?, ?, ?)', [bill.member_id, billId, due, 'other', 'completed']);
 
     res.json({ success: true, message: `Marked bill ${billId} as paid`, data: { billId, paid: due } });
   } catch (err) {

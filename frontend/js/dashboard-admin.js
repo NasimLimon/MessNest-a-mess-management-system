@@ -2,6 +2,11 @@
 let allMembers = [];
 let allBills = [];
 
+function parseNumber(value, fallback = 0) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : fallback;
+}
+
 async function init() {
   if (!await checkAuth()) return;
   if (!isAdmin()) {
@@ -251,25 +256,36 @@ function renderBillsTable() {
   
   (allBills || []).forEach(bill => {
     const row = tbody.insertRow();
-    const status = bill.paid_amount >= bill.total_amount ? 'paid' : (bill.paid_amount > 0 ? 'partial' : 'unpaid');
+    const paidAmount = parseNumber(bill.paid_amount);
+    const totalAmount = parseNumber(bill.total_amount);
+    const status = paidAmount >= totalAmount ? 'paid' : (paidAmount > 0 ? 'partial' : 'unpaid');
+    const isPaid = status === 'paid';
     row.innerHTML = `
       <td>${bill.full_name || '-'}</td>
       <td>${getMonthYear(bill.month)}</td>
       <td>${bill.meal_count || 0}</td>
-      <td>${formatCurrency(bill.total_amount || 0)}</td>
+      <td>${formatCurrency(totalAmount)}</td>
       <td>${getStatusBadge(status)}</td>
       <td>
         <button class="btn-small" onclick="viewBillDetails(${bill.id})">View</button>
         <button class="btn-small" onclick="editBill(${bill.id})">Edit</button>
-        <button class="btn-small" onclick="markBillPaid(${bill.id})">Mark Paid</button>
+        <button class="btn-small" onclick="markBillPaid(${bill.id})" ${isPaid ? 'disabled' : ''}>Mark Paid</button>
       </td>
     `;
   });
 }
 
 async function markBillPaid(billId) {
-  if (!confirm('Mark this bill as fully paid by admin?')) return;
   try {
+    const billResp = await api.getBillDetails(billId);
+    const bill = billResp.data || billResp || {};
+    const dueAmount = parseNumber(bill.due_amount);
+    if (dueAmount <= 0) {
+      showToast('Bill is already fully paid.', 'info');
+      return;
+    }
+
+    if (!confirm(`Mark bill for ${bill.full_name || 'member'} as fully paid?`)) return;
     const res = await api.markBillPaid(billId);
     showToast(res.message || 'Bill marked paid', 'success');
     await loadPayments();
@@ -318,13 +334,25 @@ async function editBill(billId) {
   try {
     const billResp = await api.getBillDetails(billId);
     const bill = billResp.data || billResp || {};
-    const mealCount = prompt('Enter updated meal count:', bill.meal_count || 0);
-    if (mealCount === null) return;
-    const extraCharges = prompt('Enter extra charges:', bill.extra_charges || 0);
-    if (extraCharges === null) return;
+    const mealCountInput = prompt('Enter updated meal count:', bill.meal_count || 0);
+    if (mealCountInput === null) return;
+    const mealCount = parseInt(mealCountInput, 10);
+    if (!Number.isFinite(mealCount) || mealCount < 0) {
+      showToast('Please enter a valid meal count', 'warning');
+      return;
+    }
+
+    const extraChargesInput = prompt('Enter extra charges:', bill.extra_charges || 0);
+    if (extraChargesInput === null) return;
+    const extraCharges = parseFloat(extraChargesInput);
+    if (!Number.isFinite(extraCharges) || extraCharges < 0) {
+      showToast('Please enter a valid extra charge amount', 'warning');
+      return;
+    }
+
     await api.updateBill(billId, {
-      mealCount: parseInt(mealCount, 10),
-      extraCharges: parseFloat(extraCharges)
+      mealCount,
+      extraCharges
     });
     showToast('Bill updated successfully!', 'success');
     await loadBills();
