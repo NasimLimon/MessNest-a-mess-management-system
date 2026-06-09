@@ -21,7 +21,10 @@ function redirectToLogin() {
 }
 
 function redirectToDashboard() {
-  if (['admin', 'manager'].includes(currentUser?.role)) {
+  if (currentUser?.role === 'admin') {
+    window.location.href = '/pages/admin-dashboard.html';
+  } else if (currentUser?.role === 'manager') {
+    // managers currently have limited access; redirect to admin dashboard if needed
     window.location.href = '/pages/admin-dashboard.html';
   } else {
     window.location.href = '/pages/member-dashboard.html';
@@ -29,7 +32,7 @@ function redirectToDashboard() {
 }
 
 function isAdmin() {
-  return ['admin', 'manager'].includes(currentUser?.role);
+  return currentUser?.role === 'admin';
 }
 
 async function handleLogin(e) {

@@ -37,6 +37,10 @@
             autocomplete="current-password"
           >
         </div>
+        <div class="auth-form remember-me">
+          <input type="checkbox" id="adminLogin">
+          <label for="adminLogin">Login as admin</label>
+        </div>
 
         <div class="auth-form remember-me">
           <input type="checkbox" id="rememberMe">
@@ -79,6 +83,7 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const rememberMe = document.getElementById('rememberMe').checked;
+      const adminLogin = document.getElementById('adminLogin').checked;
 
       const loginBtn = document.getElementById('loginBtn');
       const loginText = document.getElementById('loginText');
@@ -91,6 +96,13 @@
 
         const result = await api.login(username, password);
         currentUser = result.user;
+
+        // If admin login option selected, require the returned user to be an admin
+        if (adminLogin && currentUser.role !== 'admin') {
+          showAlert('errorAlert', 'Admin access required. Use an admin account.', 'error');
+          showToast('Admin login failed: insufficient privileges', 'error');
+          return;
+        }
 
         if (rememberMe) {
           localStorage.setItem('rememberMe', 'true');
