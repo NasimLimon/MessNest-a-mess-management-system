@@ -365,3 +365,5 @@ MealNest Team
 ---
 
 **Happy Mess Managing! 🍽️**
+http://localhost:3000/pages/member-dashboard.html
+http://localhost:3000/pages/admin-dashboard.html
