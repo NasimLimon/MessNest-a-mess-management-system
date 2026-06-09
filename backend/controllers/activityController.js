@@ -19,8 +19,8 @@ exports.getActivityLogs = async (req, res) => {
     if (filters.length) {
       sql += ` WHERE ${filters.join(' AND ')}`;
     }
-    sql += ' ORDER BY al.created_at DESC LIMIT ?';
-    params.push(parseInt(limit, 10) || 100);
+    const maxRows = parseInt(limit, 10) || 100;
+    sql += ` ORDER BY al.created_at DESC LIMIT ${maxRows}`;
 
     const logs = await query(sql, params);
     res.json({ success: true, data: logs });
