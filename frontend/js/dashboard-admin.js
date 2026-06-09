@@ -363,6 +363,32 @@ async function loadPayments() {
   }
 }
 
+async function loadActivityLogs() {
+  try {
+    const userId = document.getElementById('activityFilterUser').value;
+    const action = document.getElementById('activityFilterAction').value;
+    const response = await api.getActivityLogs({ userId: userId || undefined, action: action || undefined, limit: 100 });
+    const logs = response.data || [];
+    const tbody = document.getElementById('activityLogsList');
+    tbody.innerHTML = '';
+
+    logs.forEach(log => {
+      const row = tbody.insertRow();
+      row.innerHTML = `
+        <td>${log.id}</td>
+        <td>${log.username || log.user_id || '-'}</td>
+        <td>${log.action || '-'}</td>
+        <td>${log.details ? log.details.replace(/\n/g, '<br/>') : '-'}</td>
+        <td>${log.ip_address || '-'}</td>
+        <td>${log.user_agent || '-'}</td>
+        <td>${new Date(log.created_at).toLocaleString()}</td>
+      `;
+    });
+  } catch (err) {
+    console.error('Error loading activity logs:', err);
+  }
+}
+
 function updatePaymentBillOptions() {
   const memberSelect = document.getElementById('paymentMemberId');
   const billSelect = document.getElementById('paymentBillId');

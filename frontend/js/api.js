@@ -188,6 +188,16 @@ class ApiClient {
     return this.request(url);
   }
 
+  async getActivityLogs({ userId, action, limit } = {}) {
+    let url = '/activity';
+    const params = [];
+    if (userId) params.push(`userId=${userId}`);
+    if (action) params.push(`action=${encodeURIComponent(action)}`);
+    if (limit) params.push(`limit=${limit}`);
+    if (params.length) url += '?' + params.join('&');
+    return this.request(url);
+  }
+
   async updatePayment(paymentId, updates) {
     return this.request(`/payments/${paymentId}`, {
       method: 'PUT',

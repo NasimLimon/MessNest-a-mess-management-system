@@ -65,7 +65,13 @@ function switchTab(tabName) {
   }
 
   // Mark the clicked button as active
-  event.target.classList.add('active');
+  if (event && event.target) {
+    event.target.classList.add('active');
+  }
+
+  if (tabName === 'activity' && typeof loadActivityLogs === 'function') {
+    loadActivityLogs();
+  }
 }
 
 // Modal Functions
