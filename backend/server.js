@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const activityLogger = require('./middleware/activityLogger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api', activityLogger);
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Routes
@@ -22,6 +24,7 @@ app.use('/api/expenses', require('./routes/expenses'));
 app.use('/api/notices', require('./routes/notices'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/settings', require('./routes/settings'));
+app.use('/api/activity', require('./routes/activity'));
 
 // Serve frontend
 app.get('/', (req, res) => {
