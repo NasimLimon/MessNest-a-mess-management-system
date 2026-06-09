@@ -443,18 +443,19 @@ async function handleAddCharge(e) {
   const btn = e.target.querySelector('button[type="submit"]');
   if (btn) btn.disabled = true;
   try {
-    // Log expense globally
-    await api.addExpense(category, amount, description, null);
-    // update bill extra charges (additive)
     const billResp = await api.getBillDetails(billId);
     const bill = billResp.data || billResp || {};
     const currentExtra = Number(bill.extra_charges || 0);
     const newExtra = Number((currentExtra + amount).toFixed(2));
+    const expenseDate = bill.month ? `${bill.month}-01` : null;
+
+    // Log expense for the bill month and update bill extra charges.
+    await api.addExpense(category, amount, description, expenseDate);
     await api.updateBillCharges(billId, newExtra);
     showToast('Charge added to bill and expense logged', 'success');
     document.getElementById('addChargeForm').reset();
-    await loadExpenses();
     await loadBills();
+    await loadExpenses();
     await loadPayments();
     await loadOverviewData();
   } catch (err) {
