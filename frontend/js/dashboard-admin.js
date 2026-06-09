@@ -211,15 +211,16 @@ function filterMealsTable() {
 }
 
 // Billing Management
-async function handleGenerateBills() {
+async function handleGenerateBills(e) {
+  e.preventDefault();
   const month = document.getElementById('billMonth').value;
   if (!month) {
     showToast('Please select a month', 'warning');
     return;
   }
   
-  const btn = document.getElementById('generateBtn');
-  btn.disabled = true;
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) btn.disabled = true;
   
   try {
     const result = await api.generateBills(month);
@@ -228,7 +229,7 @@ async function handleGenerateBills() {
   } catch (err) {
     showAlert('errorAlert', 'Error: ' + err.message, 'error');
   } finally {
-    btn.disabled = false;
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -445,7 +446,8 @@ async function handleAddCharge(e) {
     // Log expense globally
     await api.addExpense(category, amount, description, null);
     // update bill extra charges (additive)
-    const bill = await api.getBillDetails(billId);
+    const billResp = await api.getBillDetails(billId);
+    const bill = billResp.data || billResp || {};
     const currentExtra = Number(bill.extra_charges || 0);
     const newExtra = Number((currentExtra + amount).toFixed(2));
     await api.updateBillCharges(billId, newExtra);
