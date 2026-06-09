@@ -46,6 +46,14 @@ module.exports = {
 
   // Expense categories
   EXPENSE_CATEGORIES: {
+    SEAT_RENT: 'seat_rent',
+    ELECTRICITY_BILL: 'electricity_bill',
+    KHALA_SALARY: 'khala_salary',
+    GAS_BILL: 'gas_bill',
+    WIFI_BILL: 'wifi_bill',
+    MARKET_COST: 'market_cost',
+    MAINTENANCE_COST: 'maintenance_cost',
+    EXTRA_EXPENSES: 'extra_expenses',
     GROCERIES: 'groceries',
     MARKET: 'market',
     UTILITIES: 'utilities',

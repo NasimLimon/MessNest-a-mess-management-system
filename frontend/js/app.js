@@ -575,11 +575,27 @@ async function renderExpenses(area) {
   try {
     const response = await api.getExpenses();
     const expenses = response.data || [];
-    const categories = ['groceries', 'market', 'utilities', 'rent', 'salary', 'maintenance', 'other'];
+    const categories = [
+      'seat_rent',
+      'electricity_bill',
+      'khala_salary',
+      'gas_bill',
+      'wifi_bill',
+      'market_cost',
+      'maintenance_cost',
+      'extra_expenses',
+      'groceries',
+      'market',
+      'utilities',
+      'rent',
+      'salary',
+      'maintenance',
+      'other'
+    ];
     area.innerHTML = `<div class="fade-in"><div class="flex items-center justify-between mb-4"><h2 class="font-display text-2xl">Expenses</h2><button id="add-expense-btn" class="bg-[#e94560] hover:bg-[#d63d56] text-white px-4 py-2 rounded-lg text-sm flex items-center gap-1"><i data-lucide="plus" style="width:14px;height:14px;"></i>Add Expense</button></div>
       <div id="expense-form" class="hidden bg-[#1a1a2e] rounded-xl p-4 mb-4 space-y-3">
         <select id="expense-category" class="w-full bg-[#16162a] border border-[#2a2a4a] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] focus:outline-none focus:border-[#e94560]">
-          ${categories.map((cat) => `<option value="${cat}">${cat}</option>`).join('')}
+          ${categories.map((cat) => `<option value="${cat}">${cat.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase())}</option>`).join('')}
         </select>
         <input id="expense-amount" type="number" placeholder="Amount" class="w-full bg-[#16162a] border border-[#2a2a4a] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] focus:outline-none focus:border-[#e94560]" />
         <input id="expense-date" type="date" class="w-full bg-[#16162a] border border-[#2a2a4a] rounded-lg px-3 py-2 text-sm text-[#e8e8e8] focus:outline-none focus:border-[#e94560]" />

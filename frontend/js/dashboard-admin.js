@@ -233,6 +233,7 @@ async function loadBills() {
     allBills = await api.getBills();
     renderBillsTable();
     updatePaymentBillOptions();
+    updateChargeBillOptions();
   } catch (err) {
     console.error('Error loading bills:', err);
   }
@@ -254,9 +255,23 @@ function renderBillsTable() {
       <td>
         <button class="btn-small" onclick="viewBillDetails(${bill.id})">View</button>
         <button class="btn-small" onclick="editBill(${bill.id})">Edit</button>
+        <button class="btn-small" onclick="markBillPaid(${bill.id})">Mark Paid</button>
       </td>
     `;
   });
+}
+
+async function markBillPaid(billId) {
+  if (!confirm('Mark this bill as fully paid by admin?')) return;
+  try {
+    const res = await api.markBillPaid(billId);
+    showToast(res.message || 'Bill marked paid', 'success');
+    await loadPayments();
+    await loadBills();
+    await loadOverviewData();
+  } catch (err) {
+    showAlert('errorAlert', 'Error: ' + err.message, 'error');
+  }
 }
 
 function filterBillsTable() {
@@ -367,6 +382,52 @@ function updatePaymentBillOptions() {
     billSelect.appendChild(option);
   });
 }
+
+function updateChargeBillOptions() {
+  const billSelect = document.getElementById('chargeBillId');
+  if (!billSelect) return;
+  billSelect.innerHTML = '<option value="">Select a bill...</option>';
+  (allBills || []).forEach(bill => {
+    const option = document.createElement('option');
+    option.value = bill.id;
+    option.text = `${bill.full_name} - ${getMonthYear(bill.month)} - ${formatCurrency(bill.total_amount || 0)}`;
+    billSelect.appendChild(option);
+  });
+}
+
+async function handleAddCharge(e) {
+  e.preventDefault();
+  const billId = document.getElementById('chargeBillId').value;
+  const category = document.getElementById('chargeCategory').value;
+  const amount = parseFloat(document.getElementById('chargeAmount').value);
+  const description = document.getElementById('chargeDescription').value.trim();
+  if (!billId || !category || !amount) {
+    showToast('Please select bill, category and amount', 'warning');
+    return;
+  }
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) btn.disabled = true;
+  try {
+    // Log expense globally
+    await api.addExpense(category, amount, description, null);
+    // update bill extra charges (additive)
+    const bill = await api.getBillDetails(billId);
+    const currentExtra = Number(bill.extra_charges || 0);
+    const newExtra = Number((currentExtra + amount).toFixed(2));
+    await api.updateBillCharges(billId, newExtra);
+    showToast('Charge added to bill and expense logged', 'success');
+    document.getElementById('addChargeForm').reset();
+    await loadExpenses();
+    await loadBills();
+    await loadPayments();
+    await loadOverviewData();
+  } catch (err) {
+    showAlert('errorAlert', 'Error: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 
 function renderPaymentsTable(payments) {
   const tbody = document.getElementById('paymentsList');

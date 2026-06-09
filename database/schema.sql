@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS payments (
 -- Expenses table (expense tracking)
 CREATE TABLE IF NOT EXISTS expenses (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  category ENUM('groceries', 'market', 'utilities', 'rent', 'salary', 'maintenance', 'other') NOT NULL,
+  category VARCHAR(255) NOT NULL,
   amount DECIMAL(10, 2) NOT NULL,
   description LONGTEXT,
   expense_date DATE NOT NULL,

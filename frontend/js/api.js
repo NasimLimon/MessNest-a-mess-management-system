@@ -153,10 +153,21 @@ class ApiClient {
     });
   }
 
+  async updateBillCharges(billId, extraCharges) {
+    return this.request(`/billing/${billId}/charges`, {
+      method: 'PUT',
+      body: JSON.stringify({ extraCharges })
+    });
+  }
+
   async getMessStats(month) {
     let url = '/billing/stats/mess';
     if (month) url += `?month=${month}`;
     return this.request(url);
+  }
+
+  async markBillPaid(billId) {
+    return this.request(`/billing/${billId}/mark-paid`, { method: 'POST' });
   }
 
   // Payments

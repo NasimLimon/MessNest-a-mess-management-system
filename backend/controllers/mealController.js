@@ -5,6 +5,44 @@ const getMemberIdByUserId = async (userId) => {
   return rows[0]?.id || null;
 };
 
+const getBillingSettings = async () => {
+  const settings = await query('SELECT * FROM settings LIMIT 1');
+  if (settings.length === 0) {
+    return { meal_rate: 100, monthly_fixed_cost: 0 };
+  }
+  return settings[0];
+};
+
+const getActiveMemberCount = async () => {
+  const rows = await query('SELECT COUNT(*) as total FROM members WHERE status = "active"');
+  return rows[0]?.total || 0;
+};
+
+const updateMemberMonthBill = async (memberId, month) => {
+  const settings = await getBillingSettings();
+  const mealRate = Number(settings.meal_rate || 0);
+  const fixedCostTotal = Number(settings.monthly_fixed_cost || 0);
+  const activeCount = await getActiveMemberCount();
+  const fixedShare = activeCount > 0 ? Number((fixedCostTotal / activeCount).toFixed(2)) : 0;
+
+  const mealData = await query(
+    `SELECT COALESCE(SUM(quantity), 0) as total_meals FROM meals WHERE member_id = ? AND DATE_FORMAT(meal_date, '%Y-%m') = ?`,
+    [memberId, month]
+  );
+  const mealCount = mealData[0]?.total_meals || 0;
+
+  const existingBill = await query('SELECT extra_charges FROM bills WHERE member_id = ? AND month = ?', [memberId, month]);
+  const extraCharges = Number(existingBill[0]?.extra_charges || 0);
+  const totalAmount = (mealCount * mealRate) + fixedShare + extraCharges;
+
+  await query(
+    `INSERT INTO bills (member_id, month, meal_count, meal_rate, fixed_cost, extra_charges, total_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE meal_count = VALUES(meal_count), meal_rate = VALUES(meal_rate), fixed_cost = VALUES(fixed_cost), extra_charges = VALUES(extra_charges), total_amount = VALUES(total_amount)`,
+    [memberId, month, mealCount, mealRate, fixedShare, extraCharges, totalAmount]
+  );
+};
+
 exports.recordMeal = async (req, res) => {
   try {
     let { memberId, mealDate, mealType, quantity = 1 } = req.body;
@@ -28,6 +66,9 @@ exports.recordMeal = async (req, res) => {
       'INSERT INTO meals (member_id, meal_date, meal_type, quantity) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)',
       [memberId, mealDate, mealType, quantity]
     );
+
+    const month = mealDate.substring(0, 7);
+    await updateMemberMonthBill(memberId, month);
 
     res.status(201).json({ success: true, message: 'Meal recorded successfully', data: result });
   } catch (err) {

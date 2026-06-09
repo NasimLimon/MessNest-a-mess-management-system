@@ -558,6 +558,24 @@ nav .user-info {
   font-size: 0.9rem;
 }
 
+/* Stat card color variants (improved palette) */
+.stat-members {
+  background: linear-gradient(135deg, #06b6d4 0%, #0ea5a4 100%); /* teal */
+  border: 1px solid rgba(14,165,164,0.18);
+}
+.stat-meals {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%); /* indigo/purple */
+  border: 1px solid rgba(124,58,237,0.18);
+}
+.stat-collected {
+  background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); /* green */
+  border: 1px solid rgba(34,197,94,0.18);
+}
+.stat-rate {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%); /* orange */
+  border: 1px solid rgba(249,115,22,0.18);
+}
+
 .card {
   background: #001a4d;
   border: 1px solid #003d99;

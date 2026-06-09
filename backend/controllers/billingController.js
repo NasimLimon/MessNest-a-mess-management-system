@@ -23,26 +23,19 @@ exports.generateBills = async (req, res) => {
     const activeMembers = await query('SELECT id FROM members WHERE status = "active"');
     const activeCount = activeMembers.length;
 
-    const fixedExpenses = await query(
-      `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE category IN ('rent','utilities','salary','maintenance','other') AND DATE_FORMAT(expense_date, '%Y-%m') = ?`,
-      [month]
-    );
-    const mealExpenses = await query(
-      `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE category IN ('groceries','market') AND DATE_FORMAT(expense_date, '%Y-%m') = ?`,
-      [month]
-    );
-    const totalMeals = await query(
-      `SELECT COALESCE(SUM(quantity), 0) as total_meals FROM meals WHERE DATE_FORMAT(meal_date, '%Y-%m') = ?`,
-      [month]
-    );
+    const settings = await getBillingSettings();
+    const defaultMealRate = Number(settings.meal_rate || 0);
+    const defaultFixedCost = Number(settings.monthly_fixed_cost || 0);
 
-    const totalFixedExpense = Number(fixedExpenses[0]?.total || 0);
-    const totalMealExpense = Number(mealExpenses[0]?.total || 0);
-    const totalMealCount = Number(totalMeals[0]?.total_meals || 0);
+    const fixedExpenseRow = await query(
+      `SELECT COALESCE(SUM(amount), 0) as total_fixed FROM expenses WHERE DATE_FORMAT(expense_date, '%Y-%m') = ?`,
+      [month]
+    );
+    const totalFixedExpense = Number(fixedExpenseRow[0]?.total_fixed || 0) + defaultFixedCost;
 
     const mealRate = overrideMealRate !== undefined
       ? Number(overrideMealRate)
-      : totalMealCount > 0 ? Number((totalMealExpense / totalMealCount).toFixed(2)) : 0;
+      : defaultMealRate;
 
     const fixedShare = overrideFixedShare !== undefined
       ? Number(overrideFixedShare)
@@ -187,7 +180,8 @@ exports.getMessStats = async (req, res) => {
 
     const totalExpenses = totalExpensesResult[0]?.total_expenses || 0;
     const totalMeals = totalMealsResult[0]?.total_meals || 0;
-    const mealRate = totalMeals > 0 ? Number((totalExpenses / totalMeals).toFixed(2)) : 0;
+    const settings = await getBillingSettings();
+    const mealRate = Number(settings.meal_rate || 0);
 
     res.json({ success: true, data: {
       total_members: totalMembersResult[0]?.total_members || 0,
@@ -197,6 +191,28 @@ exports.getMessStats = async (req, res) => {
       total_expenses: totalExpenses,
       meal_rate: mealRate
     }});
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
+exports.markBillPaid = async (req, res) => {
+  try {
+    const billId = req.params.billId;
+    const bills = await query('SELECT * FROM bills WHERE id = ?', [billId]);
+    if (bills.length === 0) return res.status(404).json({ success: false, error: 'Bill not found' });
+
+    const bill = bills[0];
+    const paidRow = await query('SELECT COALESCE(SUM(amount),0) as paid_amount FROM payments WHERE bill_id = ? AND status = ?', [billId, 'completed']);
+    const paidAmount = Number(paidRow[0]?.paid_amount || 0);
+    const due = Number(bill.total_amount || 0) - paidAmount;
+
+    if (due <= 0) return res.json({ success: true, message: 'Bill already fully paid' });
+
+    // Insert a payment record as admin action
+    await query('INSERT INTO payments (member_id, bill_id, amount, payment_method, status) VALUES (?, ?, ?, ?, ?)', [bill.member_id, billId, due, 'admin', 'completed']);
+
+    res.json({ success: true, message: `Marked bill ${billId} as paid`, data: { billId, paid: due } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
