@@ -146,6 +146,13 @@ class ApiClient {
     return this.request(`/billing/details/${billId}`);
   }
 
+  async updateBill(billId, updates) {
+    return this.request(`/billing/${billId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
   async getMessStats(month) {
     let url = '/billing/stats/mess';
     if (month) url += `?month=${month}`;
@@ -168,6 +175,13 @@ class ApiClient {
     if (month) params.push(`month=${month}`);
     if (params.length) url += '?' + params.join('&');
     return this.request(url);
+  }
+
+  async updatePayment(paymentId, updates) {
+    return this.request(`/payments/${paymentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
   }
 
   async getPaymentHistory(memberId) {

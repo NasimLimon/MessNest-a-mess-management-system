@@ -7,6 +7,7 @@ router.post('/generate', authMiddleware, adminOnly, billingController.generateBi
 router.get('/', authMiddleware, billingController.getAllBills);
 router.get('/details/:billId', authMiddleware, billingController.getBillDetails);
 router.put('/:billId/charges', authMiddleware, adminOnly, billingController.updateCharges);
-router.get('/stats/mess', authMiddleware, billingController.getMessStats);
+router.put('/:billId', authMiddleware, adminOnly, billingController.updateBill);
+router.get('/stats/mess', authMiddleware, adminOnly, billingController.getMessStats);
 
 module.exports = router;

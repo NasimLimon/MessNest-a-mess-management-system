@@ -1,5 +1,10 @@
 ﻿const { query } = require('../config/database');
 
+const getMemberIdByUserId = async (userId) => {
+  const rows = await query('SELECT id FROM members WHERE user_id = ?', [userId]);
+  return rows[0]?.id || null;
+};
+
 const getBillingSettings = async () => {
   const settings = await query('SELECT * FROM settings LIMIT 1');
   if (settings.length === 0) {
@@ -10,31 +15,53 @@ const getBillingSettings = async () => {
 
 exports.generateBills = async (req, res) => {
   try {
-    const { month, mealRate, fixedCost } = req.body;
+    const { month, mealRate: overrideMealRate, fixedCost: overrideFixedShare } = req.body;
     if (!month) {
       return res.status(400).json({ success: false, error: 'Month required' });
     }
 
-    const settings = await getBillingSettings();
-    const appliedMealRate = mealRate || settings.meal_rate || 100;
-    const appliedFixedCost = fixedCost || settings.monthly_fixed_cost || 500;
+    const activeMembers = await query('SELECT id FROM members WHERE status = "active"');
+    const activeCount = activeMembers.length;
 
-    const members = await query('SELECT id FROM members WHERE status = "active"');
+    const fixedExpenses = await query(
+      `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE category IN ('rent','utilities','salary','maintenance','other') AND DATE_FORMAT(expense_date, '%Y-%m') = ?`,
+      [month]
+    );
+    const mealExpenses = await query(
+      `SELECT COALESCE(SUM(amount), 0) as total FROM expenses WHERE category IN ('groceries','market') AND DATE_FORMAT(expense_date, '%Y-%m') = ?`,
+      [month]
+    );
+    const totalMeals = await query(
+      `SELECT COALESCE(SUM(quantity), 0) as total_meals FROM meals WHERE DATE_FORMAT(meal_date, '%Y-%m') = ?`,
+      [month]
+    );
 
-    for (const member of members) {
+    const totalFixedExpense = Number(fixedExpenses[0]?.total || 0);
+    const totalMealExpense = Number(mealExpenses[0]?.total || 0);
+    const totalMealCount = Number(totalMeals[0]?.total_meals || 0);
+
+    const mealRate = overrideMealRate !== undefined
+      ? Number(overrideMealRate)
+      : totalMealCount > 0 ? Number((totalMealExpense / totalMealCount).toFixed(2)) : 0;
+
+    const fixedShare = overrideFixedShare !== undefined
+      ? Number(overrideFixedShare)
+      : activeCount > 0 ? Number((totalFixedExpense / activeCount).toFixed(2)) : 0;
+
+    for (const member of activeMembers) {
       const mealData = await query(
         `SELECT COALESCE(SUM(quantity), 0) as total_meals FROM meals WHERE member_id = ? AND DATE_FORMAT(meal_date, '%Y-%m') = ?`,
         [member.id, month]
       );
       const mealCount = mealData[0]?.total_meals || 0;
-      const totalAmount = (mealCount * appliedMealRate) + appliedFixedCost;
+      const totalAmount = (mealCount * mealRate) + fixedShare;
       await query(
         `INSERT INTO bills (member_id, month, meal_count, meal_rate, fixed_cost, total_amount) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE meal_count = VALUES(meal_count), meal_rate = VALUES(meal_rate), fixed_cost = VALUES(fixed_cost), total_amount = VALUES(total_amount)`,
-        [member.id, month, mealCount, appliedMealRate, appliedFixedCost, totalAmount]
+        [member.id, month, mealCount, mealRate, fixedShare, totalAmount]
       );
     }
 
-    res.json({ success: true, message: `Bills generated for ${month}` });
+    res.json({ success: true, message: `Bills generated for ${month}`, data: { mealRate, fixedShare, activeMembers: activeCount } });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -42,9 +69,17 @@ exports.generateBills = async (req, res) => {
 
 exports.getAllBills = async (req, res) => {
   try {
-    const { memberId, month } = req.query;
+    let { memberId, month } = req.query;
     const conditions = [];
     const params = [];
+
+    if (req.user.role === 'member') {
+      const currentMemberId = await getMemberIdByUserId(req.user.id);
+      if (!currentMemberId) {
+        return res.status(404).json({ success: false, error: 'Member profile not found' });
+      }
+      memberId = currentMemberId;
+    }
 
     if (memberId) {
       conditions.push('b.member_id = ?');
@@ -57,7 +92,7 @@ exports.getAllBills = async (req, res) => {
 
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     const bills = await query(
-      `SELECT b.*, m.full_name, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount, CASE WHEN COALESCE(SUM(p.amount),0) >= b.total_amount THEN 'paid' WHEN COALESCE(SUM(p.amount),0) > 0 THEN 'partial' ELSE 'unpaid' END as status FROM bills b JOIN members m ON b.member_id = m.id LEFT JOIN payments p ON b.id = p.bill_id ${where} GROUP BY b.id ORDER BY b.month DESC`,
+      `SELECT b.*, m.full_name, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount, CASE WHEN COALESCE(SUM(p.amount),0) >= b.total_amount THEN 'paid' WHEN COALESCE(SUM(p.amount),0) > 0 THEN 'partial' ELSE 'unpaid' END as status FROM bills b JOIN members m ON b.member_id = m.id LEFT JOIN payments p ON b.id = p.bill_id AND p.status = 'completed' ${where} GROUP BY b.id ORDER BY b.month DESC`,
       params
     );
     res.json({ success: true, data: bills });
@@ -69,12 +104,23 @@ exports.getAllBills = async (req, res) => {
 exports.getBillDetails = async (req, res) => {
   try {
     const bills = await query(
-      `SELECT b.*, m.full_name, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount FROM bills b JOIN members m ON b.member_id = m.id LEFT JOIN payments p ON b.id = p.bill_id WHERE b.id = ? GROUP BY b.id`,
+      `SELECT b.*, m.full_name, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount FROM bills b JOIN members m ON b.member_id = m.id LEFT JOIN payments p ON b.id = p.bill_id AND p.status = 'completed' WHERE b.id = ? GROUP BY b.id`,
       [req.params.billId]
     );
     if (bills.length === 0) {
       return res.status(404).json({ success: false, error: 'Bill not found' });
     }
+
+    if (req.user.role === 'member') {
+      const currentMemberId = await getMemberIdByUserId(req.user.id);
+      if (!currentMemberId) {
+        return res.status(404).json({ success: false, error: 'Member profile not found' });
+      }
+      if (bills[0].member_id !== currentMemberId) {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+    }
+
     res.json({ success: true, data: bills[0] });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -101,6 +147,32 @@ exports.updateCharges = async (req, res) => {
   }
 };
 
+exports.updateBill = async (req, res) => {
+  try {
+    const { mealCount, mealRate, fixedCost, extraCharges } = req.body;
+    const bills = await query('SELECT * FROM bills WHERE id = ?', [req.params.billId]);
+    if (bills.length === 0) {
+      return res.status(404).json({ success: false, error: 'Bill not found' });
+    }
+
+    const bill = bills[0];
+    const updatedMealCount = mealCount !== undefined ? Number(mealCount) : bill.meal_count;
+    const updatedMealRate = mealRate !== undefined ? Number(mealRate) : Number(bill.meal_rate);
+    const updatedFixedCost = fixedCost !== undefined ? Number(fixedCost) : Number(bill.fixed_cost);
+    const updatedExtraCharges = extraCharges !== undefined ? Number(extraCharges) : Number(bill.extra_charges || 0);
+    const updatedTotal = (updatedMealCount * updatedMealRate) + updatedFixedCost + updatedExtraCharges;
+
+    await query(
+      'UPDATE bills SET meal_count = ?, meal_rate = ?, fixed_cost = ?, extra_charges = ?, total_amount = ? WHERE id = ?',
+      [updatedMealCount, updatedMealRate, updatedFixedCost, updatedExtraCharges, updatedTotal, req.params.billId]
+    );
+
+    res.json({ success: true, message: 'Bill updated successfully', data: { billId: req.params.billId } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 exports.getMessStats = async (req, res) => {
   try {
     const { month } = req.query;
@@ -109,8 +181,8 @@ exports.getMessStats = async (req, res) => {
 
     const totalMembersResult = await query('SELECT COUNT(*) as total_members FROM members WHERE status = "active"');
     const totalMealsResult = await query(`SELECT COALESCE(SUM(quantity), 0) as total_meals FROM meals ${monthWhere}`, monthParams);
-    const totalRevenueResult = await query(`SELECT COALESCE(SUM(p.amount), 0) as total_collected FROM payments p JOIN bills b ON p.bill_id = b.id ${month ? 'WHERE b.month = ?' : ''}`, monthParams);
-    const totalDueResult = await query(`SELECT COALESCE(SUM(b.total_amount - IFNULL(payed.paid_amount, 0)), 0) as total_due FROM bills b LEFT JOIN (SELECT bill_id, SUM(amount) as paid_amount FROM payments GROUP BY bill_id) payed ON b.id = payed.bill_id ${month ? 'WHERE b.month = ?' : ''}`, monthParams);
+    const totalRevenueResult = await query(`SELECT COALESCE(SUM(p.amount), 0) as total_collected FROM payments p JOIN bills b ON p.bill_id = b.id AND p.status = 'completed' ${month ? 'WHERE b.month = ?' : ''}`, monthParams);
+    const totalDueResult = await query(`SELECT COALESCE(SUM(b.total_amount - IFNULL(payed.paid_amount, 0)), 0) as total_due FROM bills b LEFT JOIN (SELECT bill_id, SUM(amount) as paid_amount FROM payments WHERE status = 'completed' GROUP BY bill_id) payed ON b.id = payed.bill_id ${month ? 'WHERE b.month = ?' : ''}`, monthParams);
     const totalExpensesResult = await query(`SELECT COALESCE(SUM(amount), 0) as total_expenses FROM expenses ${month ? 'WHERE DATE_FORMAT(expense_date, \'%Y-%m\') = ?' : ''}`, monthParams);
 
     const totalExpenses = totalExpensesResult[0]?.total_expenses || 0;

@@ -17,10 +17,17 @@ const authMiddleware = (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (!['admin', 'manager'].includes(req.user?.role)) {
-    return res.status(403).json({ error: 'Admin or manager access required' });
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
   }
   next();
 };
 
-module.exports = { authMiddleware, adminOnly };
+const memberOnly = (req, res, next) => {
+  if (req.user?.role !== 'member') {
+    return res.status(403).json({ error: 'Member access required' });
+  }
+  next();
+};
+
+module.exports = { authMiddleware, adminOnly, memberOnly };

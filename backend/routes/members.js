@@ -5,8 +5,8 @@ const router = express.Router();
 
 router.get('/me', authMiddleware, memberController.getCurrentMember);
 router.put('/me', authMiddleware, memberController.updateCurrentMember);
-router.get('/', authMiddleware, memberController.getAllMembers);
-router.get('/:id', authMiddleware, memberController.getMemberById);
+router.get('/', authMiddleware, adminOnly, memberController.getAllMembers);
+router.get('/:id', authMiddleware, adminOnly, memberController.getMemberById);
 router.post('/', authMiddleware, adminOnly, memberController.addMember);
 router.put('/:id', authMiddleware, adminOnly, memberController.updateMember);
 router.delete('/:id', authMiddleware, adminOnly, memberController.deleteMember);

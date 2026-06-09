@@ -37,9 +37,17 @@ exports.recordPayment = async (req, res) => {
 
 exports.getAllPayments = async (req, res) => {
   try {
-    const { memberId, billId, month } = req.query;
+    let { memberId, billId, month } = req.query;
     const conditions = [];
     const params = [];
+
+    if (req.user.role === 'member') {
+      const currentMemberId = await getMemberIdByUserId(req.user.id);
+      if (!currentMemberId) {
+        return res.status(404).json({ success: false, error: 'Member profile not found' });
+      }
+      memberId = currentMemberId;
+    }
 
     if (memberId) {
       conditions.push('p.member_id = ?');
@@ -89,6 +97,38 @@ exports.getMemberPaymentHistory = async (req, res) => {
   }
 };
 
+exports.updatePayment = async (req, res) => {
+  try {
+    const { amount, status } = req.body;
+    if (amount === undefined && status === undefined) {
+      return res.status(400).json({ success: false, error: 'Nothing to update' });
+    }
+
+    const payments = await query('SELECT * FROM payments WHERE id = ?', [req.params.paymentId]);
+    if (payments.length === 0) {
+      return res.status(404).json({ success: false, error: 'Payment not found' });
+    }
+
+    const updates = [];
+    const params = [];
+    if (amount !== undefined) {
+      updates.push('amount = ?');
+      params.push(amount);
+    }
+    if (status !== undefined) {
+      updates.push('status = ?');
+      params.push(status);
+    }
+
+    params.push(req.params.paymentId);
+    await query(`UPDATE payments SET ${updates.join(', ')} WHERE id = ?`, params);
+
+    res.json({ success: true, message: 'Payment updated successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 exports.getMemberBillStatus = async (req, res) => {
   try {
     let memberId = req.params.memberId;
@@ -104,7 +144,7 @@ exports.getMemberBillStatus = async (req, res) => {
     }
 
     const bills = await query(
-      `SELECT b.*, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount, CASE WHEN COALESCE(SUM(p.amount),0) >= b.total_amount THEN 'paid' WHEN COALESCE(SUM(p.amount),0) > 0 THEN 'partial' ELSE 'unpaid' END as status FROM bills b LEFT JOIN payments p ON b.id = p.bill_id WHERE b.member_id = ? GROUP BY b.id ORDER BY b.month DESC`,
+      `SELECT b.*, COALESCE(SUM(p.amount), 0) as paid_amount, (b.total_amount - COALESCE(SUM(p.amount), 0)) as due_amount, CASE WHEN COALESCE(SUM(p.amount),0) >= b.total_amount THEN 'paid' WHEN COALESCE(SUM(p.amount),0) > 0 THEN 'partial' ELSE 'unpaid' END as status FROM bills b LEFT JOIN payments p ON b.id = p.bill_id AND p.status = 'completed' WHERE b.member_id = ? GROUP BY b.id ORDER BY b.month DESC`,
       [memberId]
     );
     res.json({ success: true, data: bills });

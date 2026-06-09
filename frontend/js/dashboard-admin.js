@@ -91,6 +91,10 @@ function renderMembersSelect() {
     const option2 = option.cloneNode(true);
     paymentSelect.appendChild(option2);
   });
+
+  if (paymentSelect) {
+    paymentSelect.addEventListener('change', updatePaymentBillOptions);
+  }
 }
 
 function filterMembersTable() {
@@ -228,6 +232,7 @@ async function loadBills() {
   try {
     allBills = await api.getBills();
     renderBillsTable();
+    updatePaymentBillOptions();
   } catch (err) {
     console.error('Error loading bills:', err);
   }
@@ -239,7 +244,7 @@ function renderBillsTable() {
   
   (allBills || []).forEach(bill => {
     const row = tbody.insertRow();
-    const status = bill.amount_paid >= bill.total_amount ? 'paid' : 'unpaid';
+    const status = bill.paid_amount >= bill.total_amount ? 'paid' : (bill.paid_amount > 0 ? 'partial' : 'unpaid');
     row.innerHTML = `
       <td>${bill.full_name || '-'}</td>
       <td>${getMonthYear(bill.month)}</td>
@@ -248,6 +253,7 @@ function renderBillsTable() {
       <td>${getStatusBadge(status)}</td>
       <td>
         <button class="btn-small" onclick="viewBillDetails(${bill.id})">View</button>
+        <button class="btn-small" onclick="editBill(${bill.id})">Edit</button>
       </td>
     `;
   });
@@ -272,13 +278,35 @@ Bill Details:
 Member: ${bill.full_name}
 Month: ${getMonthYear(bill.month)}
 Meals: ${bill.meal_count}
+Rate: ${formatCurrency(bill.meal_rate || 0)}
+Fixed Cost: ${formatCurrency(bill.fixed_cost || 0)}
+Extra Charges: ${formatCurrency(bill.extra_charges || 0)}
 Amount: ${formatCurrency(bill.total_amount)}
-Paid: ${formatCurrency(bill.amount_paid || 0)}
-Due: ${formatCurrency((bill.total_amount || 0) - (bill.amount_paid || 0))}
+Paid: ${formatCurrency(bill.paid_amount || 0)}
+Due: ${formatCurrency((bill.total_amount || 0) - (bill.paid_amount || 0))}
+Status: ${bill.status || 'unpaid'}
     `;
     alert(details);
   } catch (err) {
     showToast('Error loading bill details', 'error');
+  }
+}
+
+async function editBill(billId) {
+  try {
+    const bill = await api.getBillDetails(billId);
+    const mealCount = prompt('Enter updated meal count:', bill.meal_count || 0);
+    if (mealCount === null) return;
+    const extraCharges = prompt('Enter extra charges:', bill.extra_charges || 0);
+    if (extraCharges === null) return;
+    await api.updateBill(billId, {
+      mealCount: parseInt(mealCount, 10),
+      extraCharges: parseFloat(extraCharges)
+    });
+    showToast('Bill updated successfully!', 'success');
+    await loadBills();
+  } catch (err) {
+    showAlert('errorAlert', 'Error: ' + err.message, 'error');
   }
 }
 
@@ -320,6 +348,26 @@ async function loadPayments() {
   }
 }
 
+function updatePaymentBillOptions() {
+  const memberSelect = document.getElementById('paymentMemberId');
+  const billSelect = document.getElementById('paymentBillId');
+  if (!memberSelect || !billSelect) return;
+
+  const memberId = memberSelect.value;
+  billSelect.innerHTML = '<option value="">Select a bill...</option>';
+
+  const bills = memberId
+    ? allBills.filter(bill => String(bill.member_id) === String(memberId))
+    : allBills;
+
+  bills.forEach(bill => {
+    const option = document.createElement('option');
+    option.value = bill.id;
+    option.text = `${bill.full_name} - ${getMonthYear(bill.month)} - ${formatCurrency(bill.total_amount || 0)}`;
+    billSelect.appendChild(option);
+  });
+}
+
 function renderPaymentsTable(payments) {
   const tbody = document.getElementById('paymentsList');
   tbody.innerHTML = '';
@@ -331,9 +379,29 @@ function renderPaymentsTable(payments) {
       <td>${formatCurrency(payment.amount || 0)}</td>
       <td>${payment.payment_method || '-'}</td>
       <td>${formatDate(payment.payment_date)}</td>
-      <td>${getMonthYear(payment.bill_month)}</td>
+      <td>${getMonthYear(payment.month)}</td>
+      <td>${payment.status || 'completed'}</td>
+      <td><button class="btn-small" onclick="editPayment(${payment.id}, ${payment.amount}, ${JSON.stringify(payment.status || 'completed')})">Edit</button></td>
     `;
   });
+}
+
+async function editPayment(paymentId, currentAmount, currentStatus) {
+  try {
+    const amount = prompt('Enter new payment amount:', currentAmount || 0);
+    if (amount === null) return;
+    const status = prompt('Enter payment status (completed, pending, failed):', currentStatus || 'completed');
+    if (status === null) return;
+    await api.updatePayment(paymentId, {
+      amount: parseFloat(amount),
+      status: status.trim()
+    });
+    showToast('Payment updated successfully!', 'success');
+    await loadPayments();
+    await loadBills();
+  } catch (err) {
+    showAlert('errorAlert', 'Error: ' + err.message, 'error');
+  }
 }
 
 function filterPaymentsTable() {

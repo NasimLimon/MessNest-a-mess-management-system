@@ -69,7 +69,19 @@ exports.getAllMeals = async (req, res) => {
 exports.getMemberMeals = async (req, res) => {
   try {
     const { month } = req.query;
-    const { memberId } = req.params;
+    let { memberId } = req.params;
+
+    if (req.user.role === 'member') {
+      const currentMemberId = await getMemberIdByUserId(req.user.id);
+      if (!currentMemberId) {
+        return res.status(404).json({ success: false, error: 'Member profile not found' });
+      }
+      if (parseInt(memberId, 10) !== currentMemberId) {
+        return res.status(403).json({ success: false, error: 'Access denied' });
+      }
+      memberId = currentMemberId;
+    }
+
     const params = [memberId];
     let sql = 'SELECT * FROM meals WHERE member_id = ?';
 
