@@ -70,10 +70,10 @@
         <div class="section-header">
           <h4>Quick Actions</h4>
           <div class="section-actions">
-            <button onclick="switchTab('members')">Manage Members</button>
-            <button onclick="switchTab('meals')">Record Meals</button>
-            <button onclick="switchTab('billing')">Generate Bills</button>
-            <button onclick="switchTab('complaints')">View Complaints</button>
+            <button class="btn-primary" onclick="switchTab('members')">Manage Members</button>
+            <button class="btn-primary" onclick="switchTab('meals')">Record Meals</button>
+            <button class="btn-primary" onclick="switchTab('billing')">Generate Bills</button>
+            <button class="btn-secondary" onclick="switchTab('complaints')">View Complaints</button>
           </div>
         </div>
       </div>
@@ -126,7 +126,7 @@
         <div class="section-header">
           <h4>Members Management</h4>
           <div class="section-actions">
-            <button onclick="showAddMemberForm()">Add New Member</button>
+            <button class="btn-primary" onclick="showAddMemberForm()">Add New Member</button>
           </div>
         </div>
 
@@ -135,29 +135,30 @@
             <div class="panel-grid">
               <div class="form-group">
                 <label>Full Name</label>
-                <input type="text" id="newMemberName" required>
+                <input type="text" id="newMemberName" required placeholder="e.g. John Doe">
               </div>
               <div class="form-group">
                 <label>Username</label>
-                <input type="text" id="newMemberUsername" required>
+                <input type="text" id="newMemberUsername" required placeholder="unique username">
               </div>
               <div class="form-group">
                 <label>Email</label>
-                <input type="email" id="newMemberEmail" required>
+                <input type="email" id="newMemberEmail" required placeholder="member@example.com">
               </div>
               <div class="form-group">
                 <label>Password</label>
-                <input type="password" id="newMemberPassword" required>
+                <input type="password" id="newMemberPassword" required placeholder="temporary password">
               </div>
               <div class="form-group">
                 <label>Phone</label>
-                <input type="tel" id="newMemberPhone">
+                <input type="tel" id="newMemberPhone" placeholder="optional">
               </div>
             </div>
             <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1rem;">
-              <button type="submit">Add Member</button>
+              <button class="btn-primary" type="submit">Add Member</button>
               <button type="button" onclick="showAddMemberForm()" class="btn-secondary">Cancel</button>
             </div>
+            <p class="small-note">Note: Member username must be unique. Password can be temporary; members can change it later.</p>
           </form>
         </div>
 
@@ -208,7 +209,8 @@
               </select>
             </div>
           </div>
-          <button type="submit">Record Meal</button>
+          <button class="btn-primary" type="submit">Record Meal</button>
+          <p class="small-note">Tip: Use the 'Today' quick action to auto-fill today's date. Re-submitting the same member/date/type will update the meal count.</p>
         </form>
 
         <div class="section-header" style="margin-top: 2rem;">
@@ -247,7 +249,7 @@
               <input type="month" id="billMonth" required>
             </div>
             <div class="form-group" style="align-self:flex-end;">
-              <button id="generateBtn" type="button" onclick="handleGenerateBills()">Create Billing</button>
+              <button id="generateBtn" class="btn-primary" type="button" onclick="handleGenerateBills()">Create Billing</button>
             </div>
           </div>
         </div>
@@ -296,7 +298,7 @@
               </div>
               <div class="form-group">
                 <label>Amount</label>
-                <input type="number" id="paymentAmount" step="0.01" min="0" required>
+                <input type="number" id="paymentAmount" step="0.01" min="0" required placeholder="Enter amount paid">
               </div>
               <div class="form-group">
                 <label>Payment Method</label>
@@ -308,7 +310,8 @@
                 </select>
               </div>
             </div>
-            <button type="submit">Record Payment</button>
+            <button class="btn-primary" type="submit">Record Payment</button>
+            <p class="small-note">Admins can mark payments as 'completed' via the Payments table Edit action. Use this form to record new payments.</p>
           </form>
         </div>
 

@@ -312,6 +312,50 @@ select:focus {
   background: #d63d56;
 }
 
+/* Primary and secondary button styles for clearer actions */
+.btn-primary {
+  background: #e94560;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+}
+.btn-primary:hover { background: #d63d56; }
+
+.btn-secondary {
+  background: transparent;
+  color: #8a8a9a;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.btn-secondary:hover { color: #fff; border-color: rgba(255,255,255,0.12); }
+
+.btn-danger {
+  background: rgba(233,69,96,0.08);
+  color: #e94560;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(233,69,96,0.12);
+}
+.btn-danger:hover { background: rgba(233,69,96,0.12); color: #fff; }
+
+.btn-small {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+.small-note {
+  color: #9aa0a6;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Badge variants */
+.badge-success { background: #0f5132; color: #7ef0b8; }
+.badge-info { background: #1c3d5a; color: #7fc7ff; }
+.badge-warning { background: #4a2b00; color: #ffd88a; }
+
 #login-screen .text-\[\#8a8a9a\] {
   color: #8a8a9a;
 }
