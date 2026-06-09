@@ -1,9 +1,13 @@
 let currentUser = null;
 
+function isOnAuthPage() {
+  const path = window.location.pathname;
+  return path.endsWith('/pages/login.html') || path.endsWith('/pages/register.html') || path === '/' || path.endsWith('/index.html');
+}
+
 async function checkAuth() {
   try {
     if (!api.token) {
-      redirectToLogin();
       return false;
     }
     const result = await api.getCurrentUser();
@@ -11,12 +15,17 @@ async function checkAuth() {
     return true;
   } catch (err) {
     console.error('Auth check failed:', err);
-    redirectToLogin();
+    api.logout();
+    currentUser = null;
+    if (!isOnAuthPage()) {
+      redirectToLogin();
+    }
     return false;
   }
 }
 
 function redirectToLogin() {
+  if (isOnAuthPage()) return;
   window.location.href = '/pages/login.html';
 }
 

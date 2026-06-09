@@ -10,7 +10,7 @@ async function init() {
     return;
   }
   
-  document.getElementById('userInfo').textContent = `👤 ${currentUser.full_name}`;
+  document.getElementById('userInfo').textContent = `👤 ${currentUser.username}`;
   await loadOverviewData();
   await loadMembers();
   await loadBills();
@@ -33,11 +33,12 @@ function setDefaultDates() {
 async function loadOverviewData() {
   try {
     const currentMonth = new Date().toISOString().substring(0, 7);
-    const stats = await api.getMessStats(currentMonth);
+    const statsResp = await api.getMessStats(currentMonth);
+    const stats = statsResp.data || statsResp || {};
     document.getElementById('totalMembers').textContent = stats.total_members || 0;
     document.getElementById('totalMeals').textContent = stats.total_meals || 0;
     document.getElementById('totalCollected').textContent = formatCurrency(stats.total_collected || 0);
-    document.getElementById('totalDue').textContent = formatCurrency(stats.total_due || 0);
+    document.getElementById('mealRate').textContent = formatCurrency(stats.meal_rate || 0);
   } catch (err) {
     console.error('Error loading stats:', err);
     showToast('Error loading statistics', 'error');
@@ -47,7 +48,8 @@ async function loadOverviewData() {
 // Members Management
 async function loadMembers() {
   try {
-    allMembers = await api.getMembers();
+    const membersResp = await api.getMembers();
+    allMembers = membersResp.data || membersResp || [];
     renderMembersTable();
     renderMembersSelect();
   } catch (err) {
@@ -59,6 +61,7 @@ function renderMembersTable() {
   const tbody = document.getElementById('membersList');
   tbody.innerHTML = '';
   
+  if (!Array.isArray(allMembers)) allMembers = [];
   allMembers.forEach(member => {
     const row = tbody.insertRow();
     row.innerHTML = `
@@ -177,7 +180,8 @@ async function handleRecordMeal(e) {
 
 async function loadMeals() {
   try {
-    const meals = await api.getMealHistory();
+    const mealsResp = await api.getMealHistory();
+    const meals = mealsResp.data || mealsResp || [];
     const tbody = document.getElementById('mealsList');
     tbody.innerHTML = '';
     
@@ -230,7 +234,8 @@ async function handleGenerateBills() {
 
 async function loadBills() {
   try {
-    allBills = await api.getBills();
+    const billsResp = await api.getBills();
+    allBills = billsResp.data || billsResp || [];
     renderBillsTable();
     updatePaymentBillOptions();
     updateChargeBillOptions();
@@ -287,7 +292,8 @@ function filterBillsTable() {
 
 async function viewBillDetails(billId) {
   try {
-    const bill = await api.getBillDetails(billId);
+    const billResp = await api.getBillDetails(billId);
+    const bill = billResp.data || billResp || {};
     const details = `
 Bill Details:
 Member: ${bill.full_name}
@@ -309,7 +315,8 @@ Status: ${bill.status || 'unpaid'}
 
 async function editBill(billId) {
   try {
-    const bill = await api.getBillDetails(billId);
+    const billResp = await api.getBillDetails(billId);
+    const bill = billResp.data || billResp || {};
     const mealCount = prompt('Enter updated meal count:', bill.meal_count || 0);
     if (mealCount === null) return;
     const extraCharges = prompt('Enter extra charges:', bill.extra_charges || 0);
@@ -356,7 +363,8 @@ async function handleRecordPayment(e) {
 
 async function loadPayments() {
   try {
-    const payments = await api.getPayments();
+    const paymentsResp = await api.getPayments();
+    const payments = paymentsResp.data || paymentsResp || [];
     renderPaymentsTable(payments);
   } catch (err) {
     console.error('Error loading payments:', err);
@@ -531,7 +539,8 @@ async function loadMenu() {
     const today = new Date();
     const startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
     const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().split('T')[0];
-    const menu = await api.getMenu(startDate, endDate);
+    const menuResp = await api.getMenu(startDate, endDate);
+    const menu = menuResp.data || menuResp || [];
     
     const tbody = document.getElementById('menuList');
     tbody.innerHTML = '';
@@ -601,7 +610,8 @@ async function handlePostNotice(e) {
 
 async function loadNotices() {
   try {
-    const notices = await api.getNotices();
+    const noticesResp = await api.getNotices();
+    const notices = noticesResp.data || noticesResp || [];
     const div = document.getElementById('noticesList');
     div.innerHTML = '';
     
@@ -648,9 +658,12 @@ async function deleteNotice(id) {
 // Complaints Management
 async function loadComplaints() {
   try {
-    const status = document.getElementById('complaintStatusFilter').value || '';
-    const type = document.getElementById('complaintTypeFilter').value || '';
-    const complaints = await api.getComplaints(status, type);
+    const statusEl = document.getElementById('complaintStatusFilter');
+    const typeEl = document.getElementById('complaintTypeFilter');
+    const status = statusEl ? (statusEl.value || '') : '';
+    const type = typeEl ? (typeEl.value || '') : '';
+    const complaintsResp = await api.getComplaints(status, type);
+    const complaints = complaintsResp.data || complaintsResp || [];
     
     const div = document.getElementById('complaintsList');
     div.innerHTML = '';
