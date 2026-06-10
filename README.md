@@ -15,7 +15,7 @@ A complete full-stack web application for managing dining mess operations includ
 
 ## Tech Stack
 
-- **Backend**: Node.js, Express.js, SQLite3
+- **Backend**: Node.js, Express.js, MySQL
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Authentication**: JWT (JSON Web Tokens)
 - **Password Hashing**: bcryptjs
@@ -75,7 +75,7 @@ MessNest/
 ### Prerequisites
 
 - Node.js 14+ and npm
-- SQLite3 (included with Node.js)
+- MySQL server
 
 ### Installation
 
@@ -101,7 +101,7 @@ MessNest/
    npm run setup
    ```
    This will:
-   - Create the SQLite database
+   - Create the MySQL database
    - Initialize the schema
    - Create default admin user
    - Create sample member for testing
@@ -216,14 +216,18 @@ Edit `.env` to customize (defaults are fine for development):
 ```
 PORT=3000                                    # Server port
 NODE_ENV=development                         # Environment
-DB_PATH=./database/mestnest.db              # Database location
+DB_HOST=localhost                            # MySQL host
+DB_PORT=3306                                 # MySQL port
+DB_USER=root                                 # MySQL user
+DB_PASSWORD=your-password                     # MySQL password
+DB_NAME=mestnest                             # MySQL database name
 JWT_SECRET=mestnest-super-secret-key         # JWT signing key
 CORS_ORIGIN=http://localhost:3000           # CORS allowed origin
 ```
 
 ## Database Schema
 
-The system uses SQLite3 with the following tables:
+The system uses MySQL with the following tables:
 
 - **users** - Authentication and roles
 - **members** - Mess member profiles
@@ -298,15 +302,15 @@ Use tools like:
 
 ### Database Inspection
 
-To inspect the SQLite database:
+To inspect the MySQL database:
 
 ```bash
-# Using sqlite3 CLI
-sqlite3 database/mestnest.db
+# Connect using MySQL CLI
+mysql -u root -p mestnest
 
 # Common commands:
-.tables                    # List all tables
-.schema                    # Show all schemas
+SHOW TABLES;               # List all tables
+SHOW CREATE TABLE users;   # Show schema for a table
 SELECT * FROM users;       # Query users
 ```
 

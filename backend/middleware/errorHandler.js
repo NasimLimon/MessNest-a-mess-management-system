@@ -20,7 +20,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Database errors
-  if (err.code === 'SQLITE_CONSTRAINT') {
+  if (err.code === 'ER_DUP_ENTRY') {
     return responses.conflict(res, 'Duplicate entry or constraint violation', err.message);
   }
 
