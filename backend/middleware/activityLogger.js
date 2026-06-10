@@ -23,7 +23,7 @@ const activityLogger = async (req, res, next) => {
       userId = decoded.id;
       username = decoded.username;
     } catch (err) {
-      // Ignore invalid token for logging purposes; auth middleware will handle access control.
+     
     }
   }
 
