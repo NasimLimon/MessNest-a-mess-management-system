@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   role ENUM('admin', 'manager', 'member') NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL
 );
 
 -- Members table (mess member profiles)
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS members (
   phone VARCHAR(20),
   join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   status ENUM('active', 'inactive') DEFAULT 'active',
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
@@ -27,6 +29,7 @@ CREATE TABLE IF NOT EXISTS meals (
   meal_type ENUM('breakfast', 'lunch', 'dinner') NOT NULL,
   quantity INT DEFAULT 1,
   recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   UNIQUE KEY unique_meal (member_id, meal_date, meal_type)
 );
@@ -39,6 +42,7 @@ CREATE TABLE IF NOT EXISTS menu (
   items LONGTEXT NOT NULL,
   created_by INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (created_by) REFERENCES users(id),
   UNIQUE KEY unique_menu (menu_date, meal_type)
 );
@@ -54,6 +58,7 @@ CREATE TABLE IF NOT EXISTS bills (
   extra_charges DECIMAL(10, 2) DEFAULT 0.0,
   total_amount DECIMAL(10, 2) DEFAULT 0.0,
   generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   UNIQUE KEY unique_bill (member_id, month)
 );
@@ -67,6 +72,7 @@ CREATE TABLE IF NOT EXISTS payments (
   payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   payment_method ENUM('cash', 'transfer', 'online', 'other') DEFAULT 'cash',
   status ENUM('pending', 'completed', 'failed') DEFAULT 'pending',
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
 );
@@ -80,6 +86,7 @@ CREATE TABLE IF NOT EXISTS expenses (
   expense_date DATE NOT NULL,
   created_by INT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
@@ -92,6 +99,7 @@ CREATE TABLE IF NOT EXISTS notices (
   priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   expires_at DATETIME,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
@@ -107,6 +115,7 @@ CREATE TABLE IF NOT EXISTS complaints (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   resolved_at DATETIME,
   resolved_by INT,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
   FOREIGN KEY (resolved_by) REFERENCES users(id)
 );
@@ -119,6 +128,7 @@ CREATE TABLE IF NOT EXISTS settings (
   meal_rate DECIMAL(10, 2) DEFAULT 100.0,
   monthly_fixed_cost DECIMAL(10, 2) DEFAULT 500.0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (admin_id) REFERENCES users(id)
 );
 
@@ -132,5 +142,22 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   ip_address VARCHAR(45),
   user_agent VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  deleted_at TIMESTAMP NULL DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+-- Data exports table for user data export requests and generated files
+CREATE TABLE IF NOT EXISTS data_exports (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  request_type VARCHAR(100) NOT NULL,
+  status ENUM('pending','processing','completed','failed') DEFAULT 'pending',
+  file_url VARCHAR(1024),
+  filename VARCHAR(512),
+  csv_files VARCHAR(1024),
+  formats VARCHAR(255),
+  requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP NULL DEFAULT NULL,
+  error_message LONGTEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
