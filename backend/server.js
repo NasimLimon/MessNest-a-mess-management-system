@@ -25,6 +25,11 @@ app.use('/api/notices', require('./routes/notices'));
 app.use('/api/complaints', require('./routes/complaints'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/activity', require('./routes/activity'));
+// Data export routes
+app.use('/api/data-export', require('./routes/dataExport'));
+
+// Serve generated export files
+app.use('/exports', express.static(path.join(__dirname, 'exports')));
 
 // Serve frontend
 app.get('/', (req, res) => {

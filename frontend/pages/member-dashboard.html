@@ -80,6 +80,24 @@
           <button type="submit">Save Profile</button>
         </form>
       </div>
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-title">Data Export & Privacy</div>
+        <div class="panel-grid">
+          <div>
+            <p class="text-sm" style="color: #8a8a9a; margin-bottom: 1rem;">Download a copy of your personal data and activity history.</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem;">
+              <button id="requestExportJsonBtn" style="background:#e94560;color:#fff;border:none;padding:0.75rem 1rem;border-radius:0.75rem;cursor:pointer;">Download JSON</button>
+              <button id="requestExportCsvBtn" style="background:#16162a;color:#fff;border:1px solid #e94560;padding:0.75rem 1rem;border-radius:0.75rem;cursor:pointer;">Download CSV</button>
+            </div>
+            <div id="exportStatus" class="text-sm" style="color:#b8b8b8;margin-bottom:0.75rem;"></div>
+            <div id="exportLinks" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+          </div>
+          <div>
+            <p class="text-sm" style="color:#ff7676; margin-bottom: 1rem;">Delete your account and associated data with a soft delete. This cannot be undone.</p>
+            <button id="deleteAccountBtn" style="background:#ff4d4d;color:#fff;border:none;padding:0.75rem 1rem;border-radius:0.75rem;cursor:pointer;">Delete Account</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Bills Tab -->
@@ -221,6 +239,13 @@
       document.getElementById('mealMonthFilter').value = currentMonth;
       await loadMemberOverview();
       await loadProfile();
+
+      const jsonButton = document.getElementById('requestExportJsonBtn');
+      const csvButton = document.getElementById('requestExportCsvBtn');
+      const deleteButton = document.getElementById('deleteAccountBtn');
+      if (jsonButton) jsonButton.addEventListener('click', () => handleExportRequest(['json']));
+      if (csvButton) csvButton.addEventListener('click', () => handleExportRequest(['csv']));
+      if (deleteButton) deleteButton.addEventListener('click', handleDeleteAccount);
     }
 
     async function loadMemberOverview() {
@@ -278,6 +303,108 @@
         await loadProfile();
       } catch (err) {
         showToast('Error updating profile: ' + err.message, 'error');
+      }
+    }
+
+    function setExportStatus(message) {
+      const el = document.getElementById('exportStatus');
+      if (el) el.textContent = message;
+    }
+
+    function renderExportLinks(exportId, info) {
+      const container = document.getElementById('exportLinks');
+      if (!container) return;
+      const formats = info.formats ? info.formats.split(',').map(s => s.trim().toLowerCase()) : [];
+      container.innerHTML = '';
+
+      if (formats.includes('json')) {
+        const btn = document.createElement('button');
+        btn.textContent = 'Download JSON';
+        btn.style.cssText = 'background:#e94560;color:#fff;border:none;padding:0.6rem 1rem;border-radius:0.75rem;cursor:pointer;';
+        btn.onclick = () => downloadExport(exportId, 'json');
+        container.appendChild(btn);
+      }
+
+      if (formats.includes('csv')) {
+        const resources = ['user', 'member', 'meals', 'bills', 'payments', 'complaints', 'activity_logs', 'notices', 'expenses'];
+        resources.forEach(resource => {
+          const btn = document.createElement('button');
+          btn.textContent = `Download ${resource.replace('_', ' ').toUpperCase()}`;
+          btn.style.cssText = 'background:#16162a;color:#fff;border:1px solid #e94560;padding:0.6rem 1rem;border-radius:0.75rem;cursor:pointer;';
+          btn.onclick = () => downloadExport(exportId, 'csv', resource);
+          container.appendChild(btn);
+        });
+      }
+    }
+
+    async function downloadExport(exportId, format, resource = null) {
+      try {
+        setExportStatus('Preparing download...');
+        const blob = await api.downloadDataExport(exportId, format, resource);
+        const extension = format === 'csv' ? 'csv' : 'json';
+        const fileName = resource ? `export_${resource}.${extension}` : `export_data.${extension}`;
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = fileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+        setExportStatus('Download ready');
+      } catch (err) {
+        showToast('Download failed: ' + err.message, 'error');
+        setExportStatus('');
+      }
+    }
+
+    async function pollExportStatus(exportId) {
+      try {
+        while (true) {
+          const result = await api.getExportStatus(exportId);
+          const status = result.data.status;
+          if (status === 'completed') {
+            setExportStatus('Export completed. Download links are available below.');
+            renderExportLinks(exportId, result.data);
+            return;
+          }
+          if (status === 'failed') {
+            setExportStatus('Export failed. Please try again later.');
+            return;
+          }
+          setExportStatus(`Export ${status}...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      } catch (err) {
+        showToast('Unable to check export status: ' + err.message, 'error');
+        setExportStatus('');
+      }
+    }
+
+    async function handleExportRequest(formats) {
+      try {
+        setExportStatus('Creating export request...');
+        const result = await api.requestDataExport(formats);
+        setExportStatus('Export request submitted. Processing now...');
+        await pollExportStatus(result.id);
+      } catch (err) {
+        showToast('Failed to request export: ' + err.message, 'error');
+        setExportStatus('');
+      }
+    }
+
+    async function handleDeleteAccount() {
+      const confirmed = confirm('Are you sure you want to delete your account? This will soft-delete your profile and associated data.');
+      if (!confirmed) return;
+      try {
+        await api.deleteAccount();
+        showToast('Your account has been deleted. Redirecting to login...', 'success');
+        api.logout();
+        setTimeout(() => {
+          window.location.href = '/pages/login.html';
+        }, 1200);
+      } catch (err) {
+        showToast('Account deletion failed: ' + err.message, 'error');
       }
     }
 

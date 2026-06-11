@@ -324,6 +324,47 @@ class ApiClient {
       body: JSON.stringify(data)
     });
   }
+
+  async requestDataExport(formats = ['json']) {
+    return this.request('/data-export/request', {
+      method: 'POST',
+      body: JSON.stringify({ formats })
+    });
+  }
+
+  async getExportStatus(exportId) {
+    return this.request(`/data-export/${exportId}/status`);
+  }
+
+  async getMyExports() {
+    return this.request('/data-export');
+  }
+
+  async downloadDataExport(exportId, format = 'json', resource = null) {
+    let url = `${API_BASE}/data-export/${exportId}/download?format=${encodeURIComponent(format)}`;
+    if (resource) {
+      url += `&resource=${encodeURIComponent(resource)}`;
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${this.token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => null);
+      throw new Error(errData?.error || `HTTP ${response.status}`);
+    }
+
+    return await response.blob();
+  }
+
+  async deleteAccount() {
+    return this.request('/auth/delete', {
+      method: 'DELETE'
+    });
+  }
 }
 
 const api = new ApiClient();
